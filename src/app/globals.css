@@ -1,26 +1,273 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background Colors */
+  --bg-primary: #060606;
+  --bg-secondary: #0C0C0C;
+  --bg-panel: #141414;
+  --bg-hover: #1A1A1A;
+  
+  /* Yellow Accent Colors */
+  --yellow-neo: #FFC21A;
+  --yellow-electric: #FFD84D;
+  --yellow-muted: #E6B800;
+  --yellow-glow: rgba(255, 194, 26, 0.35);
+  
+  /* Status Colors */
+  --intent-green: #6EDC5F;
+  --caution-amber: #FF9F1C;
+  --critical-red: #FF3A3A;
+  
+  /* Text Colors */
+  --text-primary: #F2F2F2;
+  --text-secondary: #A1A1A1;
+  --text-muted: #6F6F6F;
+  
+  /* Border & Grid */
+  --border-divider: #2A2A2A;
+  --border-subtle: #1F1F1F;
+  
+  /* Shadows & Glows */
+  --shadow-glow: 0 0 20px var(--yellow-glow);
+  --shadow-panel: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Background tokens */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-hover: var(--bg-hover);
+  
+  /* Yellow accent tokens */
+  --color-yellow-neo: var(--yellow-neo);
+  --color-yellow-electric: var(--yellow-electric);
+  --color-yellow-muted: var(--yellow-muted);
+  
+  /* Status tokens */
+  --color-intent-green: var(--intent-green);
+  --color-caution-amber: var(--caution-amber);
+  --color-critical-red: var(--critical-red);
+  
+  /* Text tokens */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  /* Border tokens */
+  --color-border-divider: var(--border-divider);
+  --color-border-subtle: var(--border-subtle);
+  
+  /* Font family */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-family-sans);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-divider);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--yellow-muted);
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--yellow-neo);
+  color: var(--bg-primary);
+}
+
+/* Focus Styling */
+*:focus-visible {
+  outline: 2px solid var(--yellow-neo);
+  outline-offset: 2px;
+}
+
+/* Typography Utilities */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+h2 {
+  font-size: 2.25rem;
+  font-weight: 800;
+}
+
+h3 {
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+h4 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Link Styling */
+a {
+  color: var(--yellow-neo);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--yellow-electric);
+}
+
+/* Code Styling */
+code {
+  font-family: 'Monaco', 'Courier New', monospace;
+  background: var(--bg-panel);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  color: var(--yellow-electric);
+}
+
+/* Utility Classes */
+.container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.text-gradient-yellow {
+  background: linear-gradient(135deg, var(--yellow-neo) 0%, var(--yellow-electric) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glow-yellow {
+  box-shadow: var(--shadow-glow);
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-divider);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.panel-hover {
+  transition: all 0.3s ease;
+}
+
+.panel-hover:hover {
+  border-color: var(--yellow-neo);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Animation Utilities */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Loading State */
+.spinner {
+  border: 3px solid var(--border-divider);
+  border-top: 3px solid var(--yellow-neo);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
