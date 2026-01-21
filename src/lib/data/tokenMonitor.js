@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { getProvider } from '../web3/providers';
+import { getTokenPriceData } from './priceService';
 
 const ERC20_ABI = [
     'function name() view returns (string)',
@@ -107,7 +108,7 @@ export async function getTokenBalance(tokenAddress, walletAddress) {
 }
 
 /**
- * Monitor token for price changes (simplified - in production use API)
+ * Monitor token - fetch on-chain data + real-time price data
  */
 export async function monitorToken(tokenAddress) {
     try {
@@ -119,46 +120,56 @@ export async function monitorToken(tokenAddress) {
         let decimals = 18;
         let totalSupply = '0';
 
+        // Fetch on-chain data
         try {
             name = await contract.name();
         } catch (e) {
-            // Ignore
+            console.warn('Token does not implement name()');
         }
 
         try {
             symbol = await contract.symbol();
         } catch (e) {
-            // Ignore
+            console.warn('Token does not implement symbol()');
         }
 
         try {
             const dec = await contract.decimals();
             decimals = Number(dec);
         } catch (e) {
-            // Ignore
+            console.warn('Token does not implement decimals()');
         }
 
         try {
             const supply = await contract.totalSupply();
             totalSupply = ethers.formatUnits(supply, decimals);
         } catch (e) {
-            // Ignore
+            console.warn('Token does not implement totalSupply()');
         }
 
-        // In production, integrate with price APIs (CoinGecko, DeFi Llama, etc.)
-        // For now, return basic info
+        // Fetch real-time price data from CoinGecko
+        console.log('Fetching price data for:', tokenAddress);
+        const priceData = await getTokenPriceData(tokenAddress);
+        console.log('Price data received:', priceData);
+
         return {
             address: tokenAddress,
             name,
             symbol,
             totalSupply,
             decimals,
-            // Mock price data - in production, fetch from API
-            price: null,
-            priceChange24h: null,
-            volume24h: null,
-            marketCap: null,
+            // Price data from CoinGecko
+            price: priceData.price || null,
+            priceChange24h: priceData.priceChange24h || null,
+            volume24h: priceData.volume24h || null,
+            marketCap: priceData.marketCap || null,
+            high24h: priceData.high24h || null,
+            low24h: priceData.low24h || null,
+            circulatingSupply: priceData.circulatingSupply || null,
+            ath: priceData.ath || null,
+            atl: priceData.atl || null,
             lastUpdate: Date.now(),
+            hasPriceData: priceData.success || false,
             success: true,
         };
     } catch (error) {

@@ -49,13 +49,18 @@ export function formatCurrency(value, currency = 'USD') {
 }
 
 /**
- * Format large numbers with K/M/B suffixes
+ * Format large numbers with proper K/M/B/T suffixes
  */
 export function formatLargeNumber(num) {
-    if (!num) return '0';
+    if (!num || num === '0') return '0';
 
     const n = parseFloat(num);
-    if (n >= 1e9) {
+
+    if (isNaN(n)) return '0';
+
+    if (n >= 1e12) {
+        return `${(n / 1e12).toFixed(2)}T`;
+    } else if (n >= 1e9) {
         return `${(n / 1e9).toFixed(2)}B`;
     } else if (n >= 1e6) {
         return `${(n / 1e6).toFixed(2)}M`;
@@ -63,7 +68,14 @@ export function formatLargeNumber(num) {
         return `${(n / 1e3).toFixed(2)}K`;
     }
 
-    return n.toFixed(2);
+    // For numbers less than 1000, show decimal places
+    if (n < 1) {
+        return n.toFixed(6);
+    } else if (n < 100) {
+        return n.toFixed(2);
+    }
+
+    return n.toFixed(0);
 }
 
 /**
