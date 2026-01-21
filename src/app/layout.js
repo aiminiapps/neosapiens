@@ -1,6 +1,7 @@
 import "./globals.css";
 import QueryProvider from "@/contexts/QueryProvider";
 import { WalletProvider } from "@/contexts/WalletContext";
+import { WatchlistProvider } from "@/contexts/WatchlistContext";
 import { Toaster } from "react-hot-toast";
 
 export const metadata = {
@@ -15,31 +16,33 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <QueryProvider>
           <WalletProvider>
-            {children}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#141414',
-                  color: '#F2F2F2',
-                  border: '1px solid #2A2A2A',
-                  borderRadius: '8px',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#6EDC5F',
-                    secondary: '#141414',
+            <WatchlistProvider>
+              {children}
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#141414',
+                    color: '#F2F2F2',
+                    border: '1px solid #2A2A2A',
+                    borderRadius: '8px',
                   },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#FF3A3A',
-                    secondary: '#141414',
+                  success: {
+                    iconTheme: {
+                      primary: '#6EDC5F',
+                      secondary: '#141414',
+                    },
                   },
-                },
-              }}
-            />
+                  error: {
+                    iconTheme: {
+                      primary: '#FF3A3A',
+                      secondary: '#141414',
+                    },
+                  },
+                }}
+              />
+            </WatchlistProvider>
           </WalletProvider>
         </QueryProvider>
       </body>
