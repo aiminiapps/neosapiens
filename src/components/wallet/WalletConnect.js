@@ -2,7 +2,7 @@
 
 import { useConnect, useAccount } from 'wagmi';
 import { FaWallet } from 'react-icons/fa';
-import { SiMetamask } from 'react-icons/si';
+import { CiWallet } from "react-icons/ci";
 import Button from '../ui/Button';
 import { useWallet } from '@/contexts/WalletContext';
 import { useState } from 'react';
@@ -83,7 +83,7 @@ export default function WalletConnect() {
                                     className="w-full flex items-center gap-4 p-4 bg-bg-secondary border border-border-divider rounded-lg hover:border-yellow-neo transition-all disabled:opacity-50"
                                 >
                                     {connector.name === 'MetaMask' && (
-                                        <SiMetamask className="w-8 h-8 text-yellow-neo" />
+                                        <CiWallet className="w-8 h-8 text-yellow-neo" />
                                     )}
                                     {connector.name === 'WalletConnect' && (
                                         <FaWallet className="w-8 h-8 text-yellow-neo" />
