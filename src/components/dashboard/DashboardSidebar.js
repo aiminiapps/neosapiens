@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaChartLine, FaExchangeAlt, FaBrain, FaListUl, FaBars, FaTimes } from 'react-icons/fa';
+import { FaChartLine, FaExchangeAlt, FaBrain, FaListUl, FaBars, FaTimes, FaRobot } from 'react-icons/fa';
 
 const sidebarItems = [
     { id: 'overview', label: 'Overview', icon: FaChartLine, href: '/ai' },
     { id: 'signals', label: 'Signal Feed', icon: FaBrain, href: '/ai/signals' },
     { id: 'watchlist', label: 'Token Watchlist', icon: FaListUl, href: '/ai/watchlist' },
+    { id: 'agents', label: 'AI Agents', icon: FaRobot, href: '/ai/agents' },
     { id: 'analytics', label: 'Analytics', icon: FaExchangeAlt, href: '/ai/analytics' },
 ];
 
@@ -67,8 +68,8 @@ export default function DashboardSidebar() {
                                             href={item.href}
                                             onClick={() => setIsOpen(false)}
                                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
-                                                    ? 'bg-yellow-neo text-bg-primary font-semibold'
-                                                    : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
+                                                ? 'bg-yellow-neo text-bg-primary font-semibold'
+                                                : 'text-text-secondary hover:bg-bg-hover hover:text-text-primary'
                                                 }`}
                                         >
                                             <Icon size={18} />

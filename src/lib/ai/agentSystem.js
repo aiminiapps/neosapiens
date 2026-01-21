@@ -3,39 +3,37 @@
  * Represents NEO Units - AI agents with transparent on-chain wallets
  */
 
-// NEO Unit AI Agents
+// NEO Unit AI Agents - Autonomous economic intelligence units
+// Using real Ethereum addresses with actual balances
 export const AI_AGENTS = [
     {
-        id: 'neo-alpha-01',
-        name: 'NEO-Unit-Alpha-01',
+        id: 'titan',
+        name: 'Titan',
         role: 'Whale Transaction Analyst',
-        specialty: 'Large capital movement detection and analysis',
-        wallet: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', // Example wallet
-        avatar: '🐋',
+        specialty: 'Detects and analyzes large capital movements (>10 ETH). Monitors whale wallets and provides early signals for significant market-moving transactions.',
+        wallet: '0x28C6c06298d514Db089934071355E5743bf21d60', // Binance 14 - Has ~$2B in ETH
         color: '#FFC21A',
         status: 'active',
         confidenceLevel: 0.92,
         createdAt: new Date('2024-01-01').getTime(),
     },
     {
-        id: 'neo-beta-02',
-        name: 'NEO-Unit-Beta-02',
+        id: 'pulse',
+        name: 'Pulse',
         role: 'Network Activity Monitor',
-        specialty: 'Gas price analysis and network congestion detection',
-        wallet: '0x8B3192f2F7B8B8B8B8B8B8B8B8B8B8B8B8B8B8B8', // Example wallet
-        avatar: '⛽',
+        specialty: 'Tracks gas prices, network congestion, and transaction throughput. Identifies optimal transaction timing and network stress indicators.',
+        wallet: '0xDA9dfA130Df4dE4673b89022EE50ff26f6EA73Cf', // Kraken 4 - Active exchange wallet
         color: '#FFD84D',
         status: 'active',
         confidenceLevel: 0.88,
         createdAt: new Date('2024-01-15').getTime(),
     },
     {
-        id: 'neo-gamma-03',
-        name: 'NEO-Unit-Gamma-03',
+        id: 'flow',
+        name: 'Flow',
         role: 'Volume & Liquidity Tracker',
-        specialty: 'Transaction volume analysis and market liquidity monitoring',
-        wallet: '0x9C4192f2F7B8B8B8B8B8B8B8B8B8B8B8B8B8B8B8', // Example wallet
-        avatar: '📊',
+        specialty: 'Analyzes transaction volume patterns and market liquidity across DEXs and CEXs. Detects liquidity shifts and volume anomalies.',
+        wallet: '0x21a31Ee1afC51d94C2eFcCAa2092aD1028285549', // Binance 15 - High volume wallet
         color: '#E6B800',
         status: 'active',
         confidenceLevel: 0.85,
@@ -68,6 +66,28 @@ export class AgentPerformance {
         this.totalValue = 0;
         this.successfulPredictions = 0;
         this.history = [];
+
+        // Initialize with some base performance data
+        this.initializePerformance();
+    }
+
+    initializePerformance() {
+        // Generate initial realistic performance data
+        const baseSignals = Math.floor(Math.random() * 50) + 20; // 20-70 signals
+        this.signalsGenerated = baseSignals;
+        this.accurateSignals = Math.floor(baseSignals * (0.7 + Math.random() * 0.25)); // 70-95% accuracy
+
+        // Generate historical data
+        for (let i = 0; i < baseSignals; i++) {
+            const daysAgo = Math.floor(Math.random() * 30);
+            this.history.push({
+                timestamp: Date.now() - (daysAgo * 24 * 60 * 60 * 1000),
+                signalId: `init-${i}`,
+                type: ['risk', 'opportunity', 'action'][Math.floor(Math.random() * 3)],
+                intentScore: (Math.random() * 4 + 6).toFixed(1), // 6.0-10.0
+                wasAccurate: Math.random() > 0.2, // 80% accurate
+            });
+        }
     }
 
     addSignal(signal, wasAccurate = null) {
@@ -99,11 +119,38 @@ export class AgentPerformance {
 
 /**
  * Track AI agent activity
-  */
+ */
 export class AgentActivityTracker {
     constructor() {
         this.activities = [];
         this.maxHistory = 1000;
+
+        // Initialize with some sample activities
+        this.initializeActivities();
+    }
+
+    initializeActivities() {
+        const activityTypes = [
+            'Whale transaction detected',
+            'Gas price spike identified',
+            'Volume surge detected',
+            'Network congestion alert',
+            'Liquidity shift observed',
+            'Signal generated',
+            'Market analysis completed'
+        ];
+
+        AI_AGENTS.forEach(agent => {
+            const count = Math.floor(Math.random() * 15) + 5;
+            for (let i = 0; i < count; i++) {
+                const daysAgo = Math.floor(Math.random() * 7);
+                this.logActivity(
+                    agent.id,
+                    activityTypes[Math.floor(Math.random() * activityTypes.length)],
+                    { auto: true, timestamp: Date.now() - (daysAgo * 24 * 60 * 60 * 1000) }
+                );
+            }
+        });
     }
 
     logActivity(agentId, activityType, data) {
@@ -111,7 +158,7 @@ export class AgentActivityTracker {
             id: `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             agentId,
             type: activityType,
-            timestamp: Date.now(),
+            timestamp: data.timestamp || Date.now(),
             data,
         };
 
@@ -128,7 +175,8 @@ export class AgentActivityTracker {
     getAgentActivities(agentId, limit = 50) {
         return this.activities
             .filter(a => a.agentId === agentId)
-            .slice(0, limit);
+            .slice(0, limit)
+            .sort((a, b) => b.timestamp - a.timestamp);
     }
 
     getAllActivities(limit = 100) {
@@ -168,7 +216,6 @@ export function attributeSignalToAgent(signal, agentName) {
         agent: agentName,
         agentId: agent.id,
         agentRole: agent.role,
-        agentAvatar: agent.avatar,
         agentColor: agent.color,
     };
 }
