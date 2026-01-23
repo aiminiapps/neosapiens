@@ -2,11 +2,44 @@
 
 import { useState } from 'react';
 import { useWatchlist, POPULAR_TOKENS } from '@/contexts/WatchlistContext';
-import Panel from '../ui/Panel';
-import Button from '../ui/Button';
-import { FaPlus, FaTrash, FaSync, FaStar, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { 
+    RiAddLine, 
+    RiDeleteBinLine, 
+    RiRefreshLine, 
+    RiStarFill, 
+    RiArrowUpLine, 
+    RiArrowDownLine, 
+    RiSearch2Line,
+    RiTimeLine,
+    RiCoinLine,
+    RiBarChartGroupedLine,
+    RiDatabase2Line
+} from 'react-icons/ri';
 import { formatAddress, formatCurrency, formatLargeNumber, formatPercentage, getPercentageColor } from '@/lib/utils/formatters';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- STYLED SUBCOMPONENTS ---
+
+const TechCard = ({ children, className = "" }) => (
+    <div className={`relative bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-white/10 ${className}`}>
+        {/* Soft Glow on Hover */}
+        <div className="absolute -top-20 -right-20 w-32 h-32 bg-yellow-neo/5 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        {children}
+    </div>
+);
+
+const TokenBadge = ({ label, onClick, disabled }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className="px-3 py-1.5 bg-white/5 hover:bg-yellow-neo/10 border border-white/5 hover:border-yellow-neo/30 rounded text-xs font-medium text-gray-400 hover:text-yellow-neo uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+        {label}
+    </button>
+);
+
+// --- MAIN COMPONENT ---
 
 export default function TokenWatchlist() {
     const { watchlist, loading, addToken, removeToken, refreshAllTokens } = useWatchlist();
@@ -31,214 +64,216 @@ export default function TokenWatchlist() {
         setAdding(false);
     };
 
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+    
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div className="space-y-6">
-            {/* Add Token Form */}
-            <Panel title="Add Token to Watchlist">
-                <form onSubmit={handleAddToken} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-text-secondary mb-2">
-                            Token Contract Address
-                        </label>
-                        <div className="flex gap-2">
+        <div className="space-y-8">
+            
+            {/* --- ADD TOKEN SECTION --- */}
+            <TechCard className="p-6">
+                <form onSubmit={handleAddToken} className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                            <RiSearch2Line className="text-yellow-neo" /> 
+                            Token Contract Input
+                        </h3>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="relative flex-1 group">
                             <input
                                 type="text"
                                 value={newTokenAddress}
                                 onChange={(e) => setNewTokenAddress(e.target.value)}
-                                placeholder="0x..."
-                                className="flex-1 px-4 py-2 bg-bg-secondary border border-border-divider rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:border-yellow-neo transition"
+                                placeholder="Paste 0x contract address..."
+                                className="w-full px-5 py-3 bg-[#050505] border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-neo/50 focus:ring-1 focus:ring-yellow-neo/20 transition-all font-mono text-sm"
                                 disabled={adding}
                             />
-                            <Button type="submit" disabled={adding || !newTokenAddress.trim()}>
-                                {adding ? <LoadingSpinner size="sm" /> : <FaPlus />}
-                                <span className="ml-2">Add</span>
-                            </Button>
+                            {/* Input Scanline Effect */}
+                            <div className="absolute bottom-0 left-0 h-[1px] bg-yellow-neo w-0 group-focus-within:w-full transition-all duration-500" />
                         </div>
-                        <p className="text-xs text-text-muted mt-2">
-                            ⚠️ Enter a <strong>token contract address</strong>, not a wallet address.
-                            Token contracts implement ERC-20 (have name(), symbol(), decimals()).
-                        </p>
+                        <button 
+                            type="submit" 
+                            disabled={adding || !newTokenAddress.trim()}
+                            className="px-6 py-2 bg-yellow-neo hover:bg-yellow-neo/90 text-black font-bold rounded-lg uppercase tracking-wider text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {adding ? <RiRefreshLine className="animate-spin" size={16} /> : <RiAddLine size={16} />}
+                            {adding ? 'Scanning' : 'Add'}
+                        </button>
                     </div>
-
-                    {/* Popular Tokens Quick Add */}
-                    <div>
+                    
+                    {/* Quick Add Section */}
+                    <div className="pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-3">
-                            <FaStar className="text-yellow-neo" size={14} />
-                            <span className="text-xs font-semibold text-text-muted uppercase">
-                                Popular Tokens
+                            <RiStarFill className="text-yellow-neo" size={12} />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                Quick Add Popular Tokens
                             </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {POPULAR_TOKENS.map((token) => (
-                                <button
+                                <TokenBadge
                                     key={token.address}
-                                    type="button"
+                                    label={token.symbol}
                                     onClick={() => handleQuickAdd(token.address)}
                                     disabled={adding || watchlist.some(t => t.address.toLowerCase() === token.address.toLowerCase())}
-                                    className="px-3 py-1.5 bg-bg-secondary border border-border-divider rounded-lg text-xs font-medium text-text-secondary hover:border-yellow-neo hover:text-text-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {token.symbol}
-                                </button>
+                                />
                             ))}
                         </div>
                     </div>
                 </form>
-            </Panel>
+            </TechCard>
 
-            {/* Watchlist */}
-            <Panel
-                title={`Watchlist (${watchlist.length})`}
-                actions={
-                    <Button
-                        variant="ghost"
-                        size="sm"
+            {/* --- WATCHLIST GRID --- */}
+            <div>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-intent-green rounded-full shadow-[0_0_5px_#00ff00]"></span>
+                        <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">
+                            Monitored Assets ({watchlist.length})
+                        </h3>
+                    </div>
+                    <button
                         onClick={refreshAllTokens}
                         disabled={loading || watchlist.length === 0}
+                        className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-yellow-neo transition-colors disabled:opacity-50"
                     >
-                        <FaSync className={loading ? 'animate-spin' : ''} />
-                        <span className="ml-2 hidden md:inline">Refresh</span>
-                    </Button>
-                }
-            >
+                        <RiRefreshLine className={loading ? 'animate-spin' : ''} />
+                        SYNC DATA
+                    </button>
+                </div>
+
                 {watchlist.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-text-muted mb-2">No tokens in watchlist</p>
-                        <p className="text-sm text-text-muted">
-                            Add a token by contract address or select from popular tokens above
-                        </p>
-                    </div>
+                    <TechCard className="border-dashed border-white/10">
+                        <div className="text-center py-16">
+                            <RiDatabase2Line className="mx-auto text-gray-600 mb-4" size={32} />
+                            <p className="text-gray-400 text-sm">Watchlist is empty.</p>
+                            <p className="text-xs text-gray-600 mt-1">Add a token contract to begin monitoring.</p>
+                        </div>
+                    </TechCard>
                 ) : (
-                    <div className="space-y-3">
-                        {watchlist.map((token) => (
-                            <TokenCard
-                                key={token.address}
-                                token={token}
-                                onRemove={() => removeToken(token.address)}
-                            />
-                        ))}
-                    </div>
+                    <motion.div 
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="show"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+                    >
+                        <AnimatePresence>
+                            {watchlist.map((token) => (
+                                <motion.div key={token.address} variants={itemVariants} layout>
+                                    <TokenCard
+                                        token={token}
+                                        onRemove={() => removeToken(token.address)}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </motion.div>
                 )}
-            </Panel>
+            </div>
         </div>
     );
 }
 
+// --- TOKEN CARD COMPONENT ---
+
 function TokenCard({ token, onRemove }) {
     const hasPrice = token.price !== null && token.price !== undefined;
-    const priceChangeColor = getPercentageColor(token.priceChange24h);
+    
+    // Determine color class based on price change logic
+    const isPositive = parseFloat(token.priceChange24h) >= 0;
+    const priceColorClass = isPositive ? 'text-intent-green' : 'text-critical-red';
+    const bgGlowClass = isPositive ? 'bg-intent-green/5' : 'bg-critical-red/5';
 
     return (
-        <div className="bg-bg-secondary border border-border-divider rounded-lg p-4 hover:border-yellow-neo/50 transition">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-text-primary">{token.symbol}</h3>
-                        <span className="text-xs text-text-muted">({token.name})</span>
+        <TechCard className="group h-full flex flex-col justify-between p-0 hover:border-white/20">
+            {/* Header / Top Section */}
+            <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border border-white/5 ${bgGlowClass} text-gray-200 font-bold text-sm`}>
+                            {token.symbol[0]}
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base font-bold text-white tracking-wide">{token.symbol}</h3>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-mono">ERC20</span>
+                            </div>
+                            <p className="text-[10px] font-mono text-gray-500 mt-0.5 truncate max-w-[120px]">
+                                {formatAddress(token.address)}
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-xs font-mono text-text-muted">
-                        {formatAddress(token.address)}
-                    </p>
+                    
+                    <button
+                        onClick={onRemove}
+                        className="p-2 text-gray-600 hover:text-critical-red hover:bg-critical-red/10 rounded transition-all opacity-0 group-hover:opacity-100"
+                        title="Remove Token"
+                    >
+                        <RiDeleteBinLine size={16} />
+                    </button>
                 </div>
-                <button
-                    onClick={onRemove}
-                    className="p-2 text-text-muted hover:text-critical-red transition"
-                >
-                    <FaTrash size={14} />
-                </button>
-            </div>
 
-            {/* Price Section */}
-            {hasPrice ? (
-                <div className="mb-4 pb-4 border-b border-border-divider">
-                    <div className="flex items-baseline justify-between mb-2">
-                        <div className="text-2xl font-bold text-text-primary">
+                {/* Price Display */}
+                {hasPrice ? (
+                    <div className="mb-6">
+                        <div className="text-3xl font-bold text-white tracking-tight mb-1">
                             {formatCurrency(token.price)}
                         </div>
                         {token.priceChange24h !== null && (
-                            <div className={`flex items-center gap-1 text-sm font-semibold ${priceChangeColor}`}>
-                                {parseFloat(token.priceChange24h) > 0 ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
-                                {formatPercentage(token.priceChange24h)}
+                            <div className={`flex items-center gap-1 text-xs font-bold font-mono ${priceColorClass}`}>
+                                {isPositive ? <RiArrowUpLine size={12} /> : <RiArrowDownLine size={12} />}
+                                {formatPercentage(token.priceChange24h)} (24h)
                             </div>
                         )}
                     </div>
+                ) : (
+                    <div className="mb-6 py-2">
+                        <span className="text-xs text-gray-500 font-mono bg-white/5 px-2 py-1 rounded">Price Unavailable</span>
+                    </div>
+                )}
 
-                    {/* Price Range */}
-                    {token.high24h && token.low24h && (
-                        <div className="flex items-center gap-2 text-xs text-text-muted">
-                            <span>24h Range:</span>
-                            <span>{formatCurrency(token.low24h)}</span>
-                            <span>—</span>
-                            <span>{formatCurrency(token.high24h)}</span>
-                        </div>
-                    )}
+                {/* Data Grid */}
+                <div className="grid grid-cols-2 gap-y-4 gap-x-2 pt-4 border-t border-white/5">
+                    <StatRow label="Mkt Cap" value={token.marketCap ? formatCurrency(token.marketCap) : '-'} icon={RiBarChartGroupedLine} />
+                    <StatRow label="Volume" value={token.volume24h ? formatCurrency(token.volume24h) : '-'} icon={RiCoinLine} />
+                    <StatRow label="Supply" value={formatLargeNumber(token.totalSupply)} />
+                    <StatRow label="Range (24h)" value={token.high24h && token.low24h ? `${formatLargeNumber(token.low24h)} - ${formatLargeNumber(token.high24h)}` : '-'} />
                 </div>
-            ) : (
-                <div className="mb-4 pb-4 border-b border-border-divider">
-                    <div className="text-sm text-text-muted">Price data unavailable</div>
-                </div>
-            )}
-
-            {/* Market Data Grid */}
-            <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                {token.marketCap && (
-                    <div>
-                        <div className="text-text-muted text-xs mb-1">Market Cap</div>
-                        <div className="font-semibold text-text-primary">
-                            {formatCurrency(token.marketCap)}
-                        </div>
-                    </div>
-                )}
-                {token.volume24h && (
-                    <div>
-                        <div className="text-text-muted text-xs mb-1">24h Volume</div>
-                        <div className="font-semibold text-text-primary">
-                            {formatCurrency(token.volume24h)}
-                        </div>
-                    </div>
-                )}
-                <div>
-                    <div className="text-text-muted text-xs mb-1">Total Supply</div>
-                    <div className="font-semibold text-text-primary">
-                        {formatLargeNumber(token.totalSupply)} {token.symbol}
-                    </div>
-                </div>
-                {token.circulatingSupply && (
-                    <div>
-                        <div className="text-text-muted text-xs mb-1">Circulating</div>
-                        <div className="font-semibold text-text-primary">
-                            {formatLargeNumber(token.circulatingSupply)}
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* ATH/ATL */}
-            {(token.ath || token.atl) && (
-                <div className="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-border-divider">
-                    {token.ath && (
-                        <div>
-                            <div className="text-text-muted mb-1">All-Time High</div>
-                            <div className="font-semibold text-intent-green">{formatCurrency(token.ath)}</div>
-                        </div>
-                    )}
-                    {token.atl && (
-                        <div>
-                            <div className="text-text-muted mb-1">All-Time Low</div>
-                            <div className="font-semibold text-critical-red">{formatCurrency(token.atl)}</div>
-                        </div>
-                    )}
+            {/* Footer / Last Update */}
+            <div className="px-5 py-3 bg-black/20 border-t border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[10px] text-gray-600 font-mono">
+                    <RiTimeLine size={10} />
+                    {token.lastUpdate ? new Date(token.lastUpdate).toLocaleTimeString() : 'Just now'}
                 </div>
-            )}
+                <div className="text-[10px] text-gray-600 font-mono">
+                    DEC: {token.decimals}
+                </div>
+            </div>
+        </TechCard>
+    );
+}
 
-            {/* Decimals */}
-            <div className="mt-4 pt-4 border-t border-border-divider flex items-center justify-between text-xs">
-                <span className="text-text-muted">Decimals: <span className="text-text-primary font-semibold">{token.decimals}</span></span>
-                {token.lastUpdate && (
-                    <span className="text-text-muted">
-                        Updated: {new Date(token.lastUpdate).toLocaleTimeString()}
-                    </span>
-                )}
+// Small helper for grid rows
+function StatRow({ label, value, icon: Icon }) {
+    return (
+        <div>
+            <div className="flex items-center gap-1 text-[10px] text-gray-500 uppercase font-bold mb-0.5">
+                {Icon && <Icon size={10} />} {label}
+            </div>
+            <div className="text-xs font-medium text-gray-200 font-mono truncate">
+                {value}
             </div>
         </div>
     );
