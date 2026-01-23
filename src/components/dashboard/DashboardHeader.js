@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 export default function DashboardHeader() {
     return (
-        <header className="sticky top-0 z-30 w-full pointer-events-none">
+        <header className="sticky top-0 z-50 w-full pointer-events-none">
             {/* The actual clickable content wrapper */}
             <div className="pointer-events-auto relative z-20">
                 
