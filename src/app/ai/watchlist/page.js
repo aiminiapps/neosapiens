@@ -6,11 +6,10 @@ import { motion } from 'framer-motion';
 // --- SHARED UI (To ensure consistency) ---
 const SectionHeader = ({ title, subtitle }) => (
     <div className="relative mb-10 pl-6">
-        <div className="absolute left-0 top-1 h-8 w-[2px] bg-yellow-neo rounded-full shadow-[0_0_10px_#FFC21A]" />
         <motion.h1
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-3xl font-semibold tracking-tight text-white uppercase"
+            className="text-xl sm:text-3xl font-semibold tracking-tight text-white"
         >
             {title}
         </motion.h1>
@@ -19,9 +18,9 @@ const SectionHeader = ({ title, subtitle }) => (
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-gray-500 text-sm mt-1 font-mono"
+                className="text-gray-500 text-sm mt-1 "
             >
-                // {subtitle}
+                {subtitle}
             </motion.p>
         )}
     </div>
@@ -29,7 +28,7 @@ const SectionHeader = ({ title, subtitle }) => (
 
 export default function WatchlistPage() {
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#050505]">
+        <div className="relative min-h-screen py-10 w-full overflow-hidden bg-[#050505]">
 
             {/* --- BACKGROUND LAYER --- */}
             <div className="absolute inset-0 pointer-events-none">
@@ -75,7 +74,7 @@ export default function WatchlistPage() {
 
                 <SectionHeader
                     title={<span>Token <span className="text-yellow-neo">Watchlist</span></span>}
-                    subtitle="BEP-20 Monitor // BSC On-Chain Tracking"
+                    subtitle="BSC On-Chain Tracking"
                 />
 
                 <div className="pl-4 md:pl-8 border-l border-white/5">
