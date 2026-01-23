@@ -7,7 +7,7 @@ export default function AILayout({ children }) {
             <DashboardHeader />
             <div className="flex flex-1">
                 <DashboardSidebar />
-                <main className="flex-1 overflow-x-hidden">
+                <main className="flex-1 w-full overflow-x-hidden sm:pl-[290px]">
                     {children}
                 </main>
             </div>

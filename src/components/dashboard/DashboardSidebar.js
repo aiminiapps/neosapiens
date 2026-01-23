@@ -53,7 +53,7 @@ export default function DashboardSidebar() {
 
             {/* Sidebar Container */}
             <aside
-                className={`fixed sm:sticky top-0 left-0 h-screen z-40 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                className={`fixed top-0 left-0 h-screen z-40 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                     }`}
                 style={{ width: '290px' }}
             >
