@@ -1,32 +1,37 @@
+/**
+ * Web3 Provider Configuration for BNB Chain (BSC)
+ */
+
 import { ethers } from 'ethers';
 
-// RPC provider configuration
-const RPC_PROVIDERS = {
-    ethereum: process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL || 'https://eth.public-rpc.com',
-    fallback: [
-        'https://ethereum.publicnode.com',
-        'https://rpc.ankr.com/eth',
-        'https://eth.llamarpc.com',
-    ],
-};
+// BNB Chain (BSC) Mainnet RPC endpoints
+const BSC_RPC_URL = process.env.NEXT_PUBLIC_BSC_RPC_URL || 'https://bsc-dataseed1.binance.org';
+
+// Fallback RPC endpoints for reliability
+const BSC_FALLBACK_RPCS = [
+    'https://bsc-dataseed2.binance.org',
+    'https://bsc-dataseed3.binance.org',
+    'https://bsc-dataseed4.binance.org',
+    'https://bsc.publicnode.com',
+];
 
 /**
- * Get Ethereum provider with fallback support
+ * Get BNB Chain provider with fallback support
  */
 export function getProvider() {
     try {
-        return new ethers.JsonRpcProvider(RPC_PROVIDERS.ethereum);
+        return new ethers.JsonRpcProvider(BSC_RPC_URL);
     } catch (error) {
-        console.error('Primary RPC failed, using fallback:', error);
+        console.error('Primary BSC RPC failed, trying fallback:', error);
         // Try fallback providers
-        for (const fallbackUrl of RPC_PROVIDERS.fallback) {
+        for (const fallbackUrl of BSC_FALLBACK_RPCS) {
             try {
                 return new ethers.JsonRpcProvider(fallbackUrl);
             } catch (fallbackError) {
                 continue;
             }
         }
-        throw new Error('All RPC providers failed');
+        throw new Error('All BSC RPC providers failed');
     }
 }
 
@@ -35,11 +40,11 @@ export function getProvider() {
  */
 export function getNetworkProvider(chainId) {
     const providers = {
-        1: RPC_PROVIDERS.ethereum, // Ethereum Mainnet
-        // Add more networks as needed
+        56: BSC_RPC_URL, // BSC Mainnet
+        97: 'https://data-seed-prebsc-1-s1.binance.org:8545', // BSC Testnet
     };
 
-    const rpcUrl = providers[chainId] || RPC_PROVIDERS.ethereum;
+    const rpcUrl = providers[chainId] || BSC_RPC_URL;
     return new ethers.JsonRpcProvider(rpcUrl);
 }
 
@@ -78,13 +83,13 @@ export async function getTransactionReceipt(txHash) {
 
 /**
  * Get transactions for an address (using logs - limited approach)
- * Note: For production, consider using Etherscan API or indexing service
+ * Note: For production, consider using BscScan API or indexing service
  */
 export async function getTransactions(address, fromBlock = 'latest', toBlock = 'latest') {
     const provider = getProvider();
 
     try {
-        // This is a simplified approach - for production use Etherscan API or indexer
+        // This is a simplified approach - for production use BscScan API or indexer
         const currentBlock = await provider.getBlockNumber();
         const startBlock = typeof fromBlock === 'number' ? fromBlock : currentBlock - 1000;
         const endBlock = typeof toBlock === 'number' ? toBlock : currentBlock;
@@ -106,18 +111,25 @@ export async function getTransactions(address, fromBlock = 'latest', toBlock = '
  * Network configurations
  */
 export const NETWORKS = {
-    1: {
-        name: 'Ethereum',
-        chainId: 1,
-        symbol: 'ETH',
-        explorer: 'https://etherscan.io',
+    56: {
+        name: 'BNB Smart Chain',
+        chainId: 56,
+        symbol: 'BNB',
+        explorer: 'https://bscscan.com',
+        rpcUrl: BSC_RPC_URL,
     },
-    // Add more networks as needed
+    97: {
+        name: 'BSC Testnet',
+        chainId: 97,
+        symbol: 'tBNB',
+        explorer: 'https://testnet.bscscan.com',
+        rpcUrl: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+    },
 };
 
 /**
  * Get network info by chain ID
  */
 export function getNetworkInfo(chainId) {
-    return NETWORKS[chainId] || NETWORKS[1];
+    return NETWORKS[chainId] || NETWORKS[56];
 }

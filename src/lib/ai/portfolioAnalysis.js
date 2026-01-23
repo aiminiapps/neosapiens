@@ -8,24 +8,25 @@ import { getProvider } from '../web3/providers';
 import { getTokenPriceData } from '../data/priceService';
 
 /**
- * Get comprehensive wallet portfolio
+ * Get comprehensive wallet portfolio on BNB Chain
  */
 export async function analyzeWalletPortfolio(walletAddress) {
     try {
         const provider = getProvider();
 
-        // Get ETH balance
-        const ethBalance = await provider.getBalance(walletAddress);
-        const ethBalanceFormatted = parseFloat(ethers.formatEther(ethBalance));
+        // Get BNB balance (native token on BSC)
+        const bnbBalance = await provider.getBalance(walletAddress);
+        const bnbBalanceFormatted = parseFloat(ethers.formatEther(bnbBalance));
 
-        // Common ERC-20 tokens to check
+        // Common BEP-20 tokens on BSC
         const COMMON_TOKENS = [
-            { address: '0xdac17f958d2ee523a2206206994597c13d831ec7', symbol: 'USDT', decimals: 6 },
-            { address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', symbol: 'USDC', decimals: 6 },
-            { address: '0x6b175474e89094c44da98b954eedeac495271d0f', symbol: 'DAI', decimals: 18 },
-            { address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', symbol: 'WETH', decimals: 18 },
-            { address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', symbol: 'UNI', decimals: 18 },
-            { address: '0x514910771af9ca656af840dff83e8264ecf986ca', symbol: 'LINK', decimals: 18 },
+            { address: '0x55d398326f99059fF775485246999027B3197955', symbol: 'USDT', decimals: 18 }, // Tether USD on BSC
+            { address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', symbol: 'USDC', decimals: 18 }, // USD Coin on BSC
+            { address: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3', symbol: 'DAI', decimals: 18 }, // DAI on BSC
+            { address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', symbol: 'WBNB', decimals: 18 }, // Wrapped BNB
+            { address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', symbol: 'ETH', decimals: 18 }, // Binance-Pegged ETH
+            { address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', symbol: 'BTCB', decimals: 18 }, // Binance-Pegged BTC
+            { address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56', symbol: 'BUSD', decimals: 18 }, // Binance USD
         ];
 
         // Get token balances
@@ -62,26 +63,26 @@ export async function analyzeWalletPortfolio(walletAddress) {
         // Filter out null values
         const validTokens = tokenBalances.filter(t => t !== null);
 
-        // Get ETH price
-        const ethPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
-        const ethPriceData = await ethPriceResponse.json();
-        const ethPrice = ethPriceData.ethereum?.usd || 0;
-        const ethPriceChange = ethPriceData.ethereum?.usd_24h_change || 0;
+        // Get BNB price from CoinGecko
+        const bnbPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd&include_24hr_change=true');
+        const bnbPriceData = await bnbPriceResponse.json();
+        const bnbPrice = bnbPriceData.binancecoin?.usd || 0;
+        const bnbPriceChange = bnbPriceData.binancecoin?.usd_24h_change || 0;
 
         // Calculate portfolio metrics
-        const ethValue = ethBalanceFormatted * ethPrice;
+        const bnbValue = bnbBalanceFormatted * bnbPrice;
         const tokenValue = validTokens.reduce((sum, t) => sum + t.value, 0);
-        const totalValue = ethValue + tokenValue;
+        const totalValue = bnbValue + tokenValue;
 
         const portfolio = {
             address: walletAddress,
             totalValue,
-            eth: {
-                balance: ethBalanceFormatted,
-                price: ethPrice,
-                value: ethValue,
-                priceChange24h: ethPriceChange,
-                percentage: totalValue > 0 ? (ethValue / totalValue) * 100 : 0,
+            bnb: {
+                balance: bnbBalanceFormatted,
+                price: bnbPrice,
+                value: bnbValue,
+                priceChange24h: bnbPriceChange,
+                percentage: totalValue > 0 ? (bnbValue / totalValue) * 100 : 0,
             },
             tokens: validTokens.map(t => ({
                 ...t,
@@ -89,8 +90,8 @@ export async function analyzeWalletPortfolio(walletAddress) {
             })),
             metrics: {
                 assetCount: 1 + validTokens.length,
-                diversification: calculateDiversification(ethValue, validTokens, totalValue),
-                risk: calculateRiskScore(ethValue, validTokens, totalValue),
+                diversification: calculateDiversification(bnbValue, validTokens, totalValue),
+                risk: calculateRiskScore(bnbValue, validTokens, totalValue),
             },
         };
 

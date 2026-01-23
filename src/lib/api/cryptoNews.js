@@ -19,10 +19,17 @@ export async function getCryptoNews(currencies = 'BTC,ETH', limit = 20) {
             public: 'true',
         });
 
-        const response = await fetch(`${CRYPTOPANIC_API_BASE}/posts/?${params}`);
+        const response = await fetch(`${CRYPTOPANIC_API_BASE}/posts/?${params}`, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch crypto news');
+            console.warn('CryptoPanic API response not OK:', response.status);
+            throw new Error(`Failed to fetch crypto news: ${response.status}`);
         }
 
         const data = await response.json();
@@ -32,7 +39,7 @@ export async function getCryptoNews(currencies = 'BTC,ETH', limit = 20) {
             success: true,
         };
     } catch (error) {
-        console.error('Error fetching crypto news:', error);
+        console.error('Error fetching crypto news:', error.message);
         return {
             news: [],
             success: false,
@@ -128,17 +135,25 @@ function selectAgentForNews(newsItem) {
 export async function getMarketData() {
     try {
         const response = await fetch(
-            'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h'
+            'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h',
+            {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json',
+                },
+            }
         );
 
         if (!response.ok) {
-            throw new Error('Failed to fetch market data');
+            console.warn('CoinGecko API response not OK:', response.status);
+            throw new Error(`Failed to fetch market data: ${response.status}`);
         }
 
         const data = await response.json();
         return { data, success: true };
     } catch (error) {
-        console.error('Error fetching market data:', error);
+        console.error('Error fetching market data:', error.message);
         return { data: [], success: false };
     }
 }

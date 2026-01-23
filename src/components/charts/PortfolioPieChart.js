@@ -15,7 +15,7 @@ export default function PortfolioPieChart({ portfolio }) {
         }
 
         const data = [
-            { value: portfolio.eth.value, name: `ETH (${portfolio.eth.percentage.toFixed(1)}%)` },
+            { value: portfolio.bnb.value, name: `BNB (${portfolio.bnb.percentage.toFixed(1)}%)` },
             ...portfolio.tokens.map(t => ({
                 value: t.value,
                 name: `${t.symbol} (${t.percentage.toFixed(1)}%)`

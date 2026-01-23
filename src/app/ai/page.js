@@ -128,13 +128,13 @@ export default function AICommandCenter() {
 
                                     {/* Asset Breakdown */}
                                     <div className="space-y-3">
-                                        {/* ETH */}
+                                        {/* BNB */}
                                         <AssetRow
-                                            symbol="ETH"
-                                            balance={portfolio.eth.balance}
-                                            value={portfolio.eth.value}
-                                            percentage={portfolio.eth.percentage}
-                                            priceChange={portfolio.eth.priceChange24h}
+                                            symbol="BNB"
+                                            balance={portfolio.bnb.balance}
+                                            value={portfolio.bnb.value}
+                                            percentage={portfolio.bnb.percentage}
+                                            priceChange={portfolio.bnb.priceChange24h}
                                         />
 
                                         {/* Tokens */}
