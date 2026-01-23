@@ -12,8 +12,8 @@ export default function NetworkIndicator() {
 
     return (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-panel border border-border-divider rounded-lg">
-            <div className="w-2 h-2 rounded-full bg-intent-green animate-pulse-glow" />
-            <span className="text-sm font-medium text-text-primary">{network.name}</span>
+            <div className="w-2 h-2 sm:block hidden rounded-full bg-intent-green animate-pulse-glow" />
+            <span className="text-[6px] sm:text-sm font-medium text-text-primary">{network.name}</span>
         </div>
     );
 }
