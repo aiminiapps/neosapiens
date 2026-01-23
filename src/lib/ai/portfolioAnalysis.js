@@ -30,6 +30,7 @@ export async function analyzeWalletPortfolio(walletAddress) {
         ];
 
         // Get token balances
+        console.log('[Portfolio] Fetching token balances...');
         const tokenBalances = await Promise.all(
             COMMON_TOKENS.map(async (token) => {
                 try {
@@ -42,6 +43,7 @@ export async function analyzeWalletPortfolio(walletAddress) {
                     const balanceFormatted = parseFloat(ethers.formatUnits(balance, token.decimals));
 
                     if (balanceFormatted > 0) {
+                        console.log(`[Portfolio] ${token.symbol} balance:`, balanceFormatted);
                         // Get price data
                         const priceData = await getTokenPriceData(token.address);
                         return {
@@ -55,6 +57,7 @@ export async function analyzeWalletPortfolio(walletAddress) {
                     }
                     return null;
                 } catch (error) {
+                    console.log(`[Portfolio] Error fetching ${token.symbol}:`, error.message);
                     return null;
                 }
             })
@@ -171,8 +174,8 @@ export function generatePortfolioRecommendations(portfolio) {
     }
 
     // Concentration risk
-    const largestPosition = portfolio.eth.percentage > 50
-        ? { symbol: 'ETH', percentage: portfolio.eth.percentage }
+    const largestPosition = portfolio.bnb.percentage > 50
+        ? { symbol: 'BNB', percentage: portfolio.bnb.percentage }
         : portfolio.tokens.find(t => t.percentage > 50);
 
     if (largestPosition && largestPosition.percentage > 50) {
