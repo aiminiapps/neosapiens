@@ -170,7 +170,7 @@ export default function DashboardSidebar() {
                                             {isActive && (
                                                 <motion.div
                                                     layoutId="active-dot"
-                                                    className="w-1.5 h-1.5 bg-yellow-neo rounded-full shadow-[0_0_8px_#FFC21A]"
+                                                    className="w-1.5 hidden h-1.5 bg-yellow-neo rounded-full shadow-[0_0_8px_#FFC21A]"
                                                 />
                                             )}
                                         </div>
