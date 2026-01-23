@@ -1,20 +1,88 @@
 'use client';
 
 import AIAgentsDashboard from '@/components/dashboard/AIAgentsDashboard';
+import { motion } from 'framer-motion';
+
+// --- SHARED UI COMPONENTS ---
+
+const SectionHeader = ({ title, subtitle }) => (
+    <div className="relative mb-10 pl-6">
+        <div className="absolute left-0 top-1 h-8 w-[2px] bg-yellow-neo rounded-full shadow-[0_0_10px_#FFC21A]" />
+        <motion.h1 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-3xl font-semibold tracking-tight text-white uppercase"
+        >
+            {title}
+        </motion.h1>
+        {subtitle && (
+            <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="text-gray-500 text-sm mt-1 font-mono"
+            >
+                // {subtitle}
+            </motion.p>
+        )}
+    </div>
+);
 
 export default function AgentsPage() {
     return (
-        <div className="container mx-auto px-4 md:px-6 py-6 md:py-8 max-w-7xl">
-            <div className="mb-6 md:mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                    AI <span className="text-gradient-yellow">Agents</span>
-                </h1>
-                <p className="text-text-secondary text-sm md:text-base">
-                    Select an agent to view performance, wallet activity, and transparency metrics
-                </p>
+        <div className="relative min-h-screen w-full overflow-hidden bg-[#050505]">
+            
+            {/* --- BACKGROUND LAYER --- */}
+            <div className="absolute inset-0 pointer-events-none">
+                {/* 1. Mesh Texture */}
+                <div 
+                    className="absolute inset-0 opacity-[0.03]"
+                    style={{ 
+                        backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', 
+                        backgroundSize: '32px 32px' 
+                    }} 
+                />
+                
+                {/* 2. The Tech Line Animation */}
+                <svg className="absolute top-0 left-0 w-full h-full opacity-20" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#FFC21A" stopOpacity="0" />
+                            <stop offset="50%" stopColor="#FFC21A" stopOpacity="1" />
+                            <stop offset="100%" stopColor="#FFC21A" stopOpacity="0" />
+                        </linearGradient>
+                    </defs>
+                    <path 
+                        d="M 60 0 L 60 150 L 100 180 L 100 1000" 
+                        fill="none" 
+                        stroke="url(#lineGradient)" 
+                        strokeWidth="1" 
+                    />
+                    <circle r="3" fill="#FFC21A">
+                        <animateMotion 
+                            dur="8s" 
+                            repeatCount="indefinite"
+                            path="M 60 0 L 60 150 L 100 180 L 100 1000"
+                        />
+                    </circle>
+                </svg>
+
+                {/* 3. Ambient Glow */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-yellow-neo/5 blur-[100px] rounded-full pointer-events-none" />
             </div>
 
-            <AIAgentsDashboard />
+            {/* --- CONTENT LAYER --- */}
+            <div className="relative z-10 container mx-auto px-6 md:px-12 py-10 max-w-7xl">
+                
+                <SectionHeader 
+                    title={<span>AI <span className="text-yellow-neo">Agents</span></span>}
+                    subtitle="Neural Network Status // Active Units"
+                />
+
+                <div className="pl-4 md:pl-8 border-l border-white/5">
+                    <AIAgentsDashboard />
+                </div>
+            </div>
         </div>
     );
 }

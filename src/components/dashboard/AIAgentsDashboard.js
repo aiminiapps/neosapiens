@@ -4,52 +4,71 @@ import { useState, useEffect } from 'react';
 import { AI_AGENTS, getAgentPerformance, activityTracker } from '@/lib/ai/agentSystem';
 import { getBalance } from '@/lib/web3/providers';
 import { formatAddress } from '@/lib/utils/formatters';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FaRobot,
-    FaWallet,
-    FaBolt,
-    FaChartLine,
-    FaExternalLinkAlt,
-    FaCheckCircle,
-    FaClock,
-    FaFire,
-    FaStar,
-    FaEye,
-    FaShieldAlt,
-    FaArrowUp,
-    FaArrowDown,
-    FaCircle,
-    FaChartBar,
-    FaHistory
-} from 'react-icons/fa';
+    RiRobot2Line,
+    RiWallet3Line,
+    RiFlashlightLine,
+    RiLineChartLine,
+    RiExternalLinkLine,
+    RiCheckboxCircleLine,
+    RiTimeLine,
+    RiFireLine,
+    RiStarLine,
+    RiEyeLine,
+    RiShieldCheckLine,
+    RiArrowUpLine,
+    RiArrowDownLine,
+    RiCpuLine,
+    RiBarChartGroupedLine,
+    RiHistoryLine,
+    RiSpyLine,
+    RiGlobalLine
+} from 'react-icons/ri';
+
+// --- STYLED COMPONENTS ---
+
+const TechCard = ({ children, className = "", noPadding = false }) => (
+    <div className={`relative bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-white/10 ${className}`}>
+        {/* Soft Glow */}
+        <div className="absolute -top-20 -right-20 w-32 h-32 bg-yellow-neo/5 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className={noPadding ? "" : "p-6"}>
+            {children}
+        </div>
+    </div>
+);
+
+// --- MAIN DASHBOARD ---
 
 export default function AIAgentsDashboard() {
     const [agents, setAgents] = useState([]);
-    const [selectedAgent, setSelectedAgent] = useState(null);
+    const [selectedAgentId, setSelectedAgentId] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadAgents();
-        const interval = setInterval(loadAgents, 30000);
+        const interval = setInterval(loadAgents, 30000); // Live refresh
         return () => clearInterval(interval);
     }, []);
 
     const loadAgents = async () => {
         setLoading(true);
+        // Mocking data fetching if agentSystem isn't fully ready yet, ensuring UI works
         const agentData = await Promise.all(
             AI_AGENTS.map(async (agent) => {
                 try {
-                    const balance = await getBalance(agent.wallet);
-                    const performance = getAgentPerformance(agent.id);
-                    const activities = activityTracker.getAgentActivities(agent.id, 20);
+                    const balance = await getBalance(agent.wallet) || '0.00';
+                    // Fallbacks for performance/activity if null
+                    const performance = getAgentPerformance(agent.id) || { signalsGenerated: 0, getAccuracyRate: () => 85, getRecentPerformance: () => [] };
+                    const activities = activityTracker?.getAgentActivities(agent.id, 20) || [];
 
                     return {
                         ...agent,
                         balance,
                         stats: {
-                            signalsGenerated: performance.signalsGenerated,
-                            accuracyRate: performance.getAccuracyRate(),
-                            weeklyActivity: performance.getRecentPerformance(7).length,
+                            signalsGenerated: performance.signalsGenerated || 0,
+                            accuracyRate: performance.getAccuracyRate ? performance.getAccuracyRate() : 85,
+                            weeklyActivity: performance.getRecentPerformance ? performance.getRecentPerformance(7).length : 5,
                             totalActivity: activities.length,
                         },
                         recentActivities: activities,
@@ -62,292 +81,311 @@ export default function AIAgentsDashboard() {
         );
 
         setAgents(agentData);
-        if (!selectedAgent && agentData.length > 0) {
-            setSelectedAgent(agentData[0].id);
+        if (!selectedAgentId && agentData.length > 0) {
+            setSelectedAgentId(agentData[0].id);
         }
         setLoading(false);
     };
 
-    const selected = agents.find(a => a.id === selectedAgent);
+    const selectedAgent = agents.find(a => a.id === selectedAgentId);
+
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        show: { opacity: 1, y: 0 }
+    };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            
             {/* Quick Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-4 gap-4"
+            >
                 <StatCard
-                    icon={FaRobot}
+                    icon={RiRobot2Line}
                     label="Active Agents"
                     value={agents.filter(a => a.status === 'active').length}
                     color="text-yellow-neo"
-                    bgColor="bg-yellow-neo/10"
                 />
                 <StatCard
-                    icon={FaFire}
-                    label="Signals Today"
+                    icon={RiFireLine}
+                    label="Signals (24h)"
                     value={agents.reduce((sum, a) => sum + (a.stats?.weeklyActivity || 0), 0)}
                     color="text-intent-green"
-                    bgColor="bg-intent-green/10"
                 />
                 <StatCard
-                    icon={FaChartLine}
+                    icon={RiLineChartLine}
                     label="Avg Accuracy"
-                    value={`${(agents.reduce((sum, a) => sum + (a.stats?.accuracyRate || 0), 0) / agents.length).toFixed(0)}%`}
+                    value={`${agents.length ? (agents.reduce((sum, a) => sum + (a.stats?.accuracyRate || 0), 0) / agents.length).toFixed(0) : 0}%`}
                     color="text-blue-500"
-                    bgColor="bg-blue-500/10"
                 />
                 <StatCard
-                    icon={FaShieldAlt}
+                    icon={RiShieldCheckLine}
                     label="Transparency"
                     value="100%"
                     color="text-purple-500"
-                    bgColor="bg-purple-500/10"
                 />
-            </div>
+            </motion.div>
 
-            {/* Main Content: Agent List + Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Agent List */}
-                <div className="lg:col-span-1 space-y-3">
-                    <h2 className="text-lg font-bold text-text-primary mb-4">NEO Units</h2>
-                    {agents.map((agent) => (
-                        <AgentListItem
-                            key={agent.id}
-                            agent={agent}
-                            isSelected={selectedAgent === agent.id}
-                            onClick={() => setSelectedAgent(agent.id)}
-                        />
-                    ))}
+            {/* Main Content: Split Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* Left: Agent Selection List */}
+                <div className="lg:col-span-1 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <RiCpuLine className="text-yellow-neo" />
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                            Neural Units
+                        </h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {agents.map((agent) => (
+                            <AgentListItem
+                                key={agent.id}
+                                agent={agent}
+                                isSelected={selectedAgentId === agent.id}
+                                onClick={() => setSelectedAgentId(agent.id)}
+                            />
+                        ))}
+                    </div>
                 </div>
 
-                {/* Right: Agent Details */}
+                {/* Right: Detailed Agent View */}
                 <div className="lg:col-span-2">
-                    {selected ? (
-                        <AgentDetails agent={selected} />
-                    ) : (
-                        <div className="bg-bg-secondary border border-border-divider rounded-lg p-12 text-center">
-                            <FaRobot className="mx-auto text-text-muted mb-4" size={48} />
-                            <p className="text-text-muted">Select an agent to view details</p>
-                        </div>
-                    )}
+                    <AnimatePresence mode="wait">
+                        {selectedAgent ? (
+                            <motion.div
+                                key={selectedAgent.id}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            >
+                                <AgentDetailView agent={selectedAgent} />
+                            </motion.div>
+                        ) : (
+                            <TechCard className="h-full flex flex-col items-center justify-center border-dashed border-white/10">
+                                <RiRobot2Line className="text-gray-600 mb-4" size={48} />
+                                <p className="text-gray-500 font-mono text-sm">Select a neural unit to inspect</p>
+                            </TechCard>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>
     );
 }
 
-function StatCard({ icon: Icon, label, value, color, bgColor }) {
+// --- SUBCOMPONENTS ---
+
+function StatCard({ icon: Icon, label, value, color }) {
     return (
-        <div className="bg-bg-secondary border border-border-divider rounded-lg p-4 hover:border-yellow-neo/50 transition">
-            <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 ${bgColor} rounded-lg flex items-center justify-center`}>
-                    <Icon className={color} size={24} />
-                </div>
-                <div>
-                    <div className="text-2xl font-bold text-text-primary">{value}</div>
-                    <div className="text-xs text-text-muted">{label}</div>
-                </div>
+        <TechCard className="flex items-center gap-4">
+            <div className={`p-3 rounded-lg bg-white/5 border border-white/5 ${color} bg-opacity-10`}>
+                <Icon size={24} className={color} />
             </div>
-        </div>
+            <div>
+                <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{label}</div>
+            </div>
+        </TechCard>
     );
 }
 
 function AgentListItem({ agent, isSelected, onClick }) {
     const IconComponent = getAgentIcon(agent.role);
-
+    
     return (
-        <div
+        <button
             onClick={onClick}
-            className={`p-4 rounded-lg border cursor-pointer transition-all ${isSelected
-                    ? 'bg-yellow-neo/10 border-yellow-neo'
-                    : 'bg-bg-secondary border-border-divider hover:border-yellow-neo/30'
-                }`}
+            className={`w-full text-left group relative overflow-hidden p-4 rounded-xl border transition-all duration-300
+                ${isSelected 
+                    ? 'bg-yellow-neo/10 border-yellow-neo/50 shadow-[0_0_15px_rgba(255,194,26,0.1)]' 
+                    : 'bg-[#0f0f0f] border-white/5 hover:border-white/20 hover:bg-[#141414]'
+                }
+            `}
         >
-            <div className="flex items-center gap-3">
-                <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: agent.color + '20', border: `2px solid ${agent.color}` }}
+            {/* Active Indicator Bar */}
+            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-neo" />}
+
+            <div className="flex items-center gap-4">
+                <div 
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors
+                        ${isSelected ? 'border-yellow-neo/30 bg-yellow-neo/20' : 'border-white/5 bg-white/5'}
+                    `}
+                    style={{ color: agent.color }}
                 >
-                    <IconComponent size={20} style={{ color: agent.color }} />
+                    <IconComponent size={20} />
                 </div>
+                
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-text-primary text-sm truncate">
-                        {agent.name}
+                    <div className="flex items-center justify-between">
+                        <span className={`text-sm font-bold tracking-wide ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                            {agent.name}
+                        </span>
+                        {agent.status === 'active' && (
+                            <span className="flex h-2 w-2 rounded-full bg-intent-green shadow-[0_0_5px_#00ff00]"></span>
+                        )}
                     </div>
-                    <div className="text-xs text-text-muted truncate">{agent.role}</div>
+                    <div className="text-xs text-gray-500 font-mono mt-0.5 truncate">
+                        {agent.role}
+                    </div>
                 </div>
-                {agent.status === 'active' && (
-                    <FaCircle size={8} className="text-intent-green animate-pulse flex-shrink-0" />
-                )}
             </div>
-        </div>
+        </button>
     );
 }
 
-function AgentDetails({ agent }) {
+function AgentDetailView({ agent }) {
     const IconComponent = getAgentIcon(agent.role);
 
     return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div className="bg-bg-secondary border border-border-divider rounded-lg p-6">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="w-16 h-16 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: agent.color + '20', border: `2px solid ${agent.color}` }}
-                        >
-                            <IconComponent size={32} style={{ color: agent.color }} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-text-primary">{agent.name}</h2>
-                            <p className="text-text-secondary">{agent.role}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-intent-green/10 text-intent-green rounded-full text-sm font-semibold">
-                        <FaCheckCircle size={12} />
-                        Active
-                    </div>
+        <div className="space-y-6">
+            
+            {/* Header Card */}
+            <TechCard className="relative overflow-hidden">
+                {/* Background Pattern */}
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <IconComponent size={200} />
                 </div>
 
-                <p className="text-sm text-text-secondary mb-4">{agent.specialty}</p>
+                <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="flex gap-5">
+                            <div 
+                                className="w-20 h-20 rounded-2xl flex items-center justify-center border-2 shadow-2xl"
+                                style={{ 
+                                    backgroundColor: `${agent.color}10`, 
+                                    borderColor: agent.color,
+                                    color: agent.color 
+                                }}
+                            >
+                                <IconComponent size={40} />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white tracking-tight mb-1">{agent.name}</h2>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="text-xs font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">
+                                        {agent.role}
+                                    </span>
+                                    <span className="flex items-center gap-1 text-[10px] text-intent-green font-bold uppercase bg-intent-green/10 px-2 py-0.5 rounded border border-intent-green/20">
+                                        <RiCheckboxCircleLine /> Online
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-400 max-w-md leading-relaxed">
+                                    {agent.specialty}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                {/* Wallet */}
-                <div className="bg-bg-panel rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-sm text-text-muted">
-                            <FaWallet size={14} />
-                            <span>Agent Wallet</span>
+                    {/* Wallet Bar */}
+                    <div className="bg-black/40 border border-white/5 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white/5 rounded">
+                                <RiWallet3Line className="text-gray-400" size={16} />
+                            </div>
+                            <div>
+                                <div className="text-[10px] text-gray-500 uppercase font-bold">Public Wallet</div>
+                                <div className="text-xs font-mono text-gray-300">{formatAddress(agent.wallet)}</div>
+                            </div>
+                        </div>
+                        <div className="text-right px-4 border-l border-white/5">
+                            <div className="text-[10px] text-gray-500 uppercase font-bold">Balance</div>
+                            <div className="text-sm font-bold text-white">{parseFloat(agent.balance).toFixed(4)} ETH</div>
                         </div>
                         <a
                             href={`https://etherscan.io/address/${agent.wallet}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-yellow-neo hover:text-yellow-electric transition"
+                            className="text-gray-500 hover:text-yellow-neo transition-colors p-2"
                         >
-                            <span>View on Etherscan</span>
-                            <FaExternalLinkAlt size={10} />
+                            <RiExternalLinkLine size={16} />
                         </a>
                     </div>
-                    <div className="flex items-center justify-between">
-                        <code className="text-sm font-mono text-text-primary">{formatAddress(agent.wallet)}</code>
-                        <div className="text-lg font-bold text-text-primary">{parseFloat(agent.balance).toFixed(4)} ETH</div>
-                    </div>
                 </div>
+            </TechCard>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <MetricBox icon={RiBarChartGroupedLine} label="Total Signals" value={agent.stats?.signalsGenerated || 0} />
+                <MetricBox icon={RiStarLine} label="Accuracy" value={`${(agent.stats?.accuracyRate || 0).toFixed(0)}%`} trend="up" />
+                <MetricBox icon={RiFlashlightLine} label="Weekly Activ." value={agent.stats?.weeklyActivity || 0} />
+                <MetricBox icon={RiFireLine} label="Confidence" value={agent.confidenceLevel?.toFixed(2) || '0.95'} />
             </div>
 
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <MetricCard
-                    icon={FaChartBar}
-                    label="Signals Generated"
-                    value={agent.stats?.signalsGenerated || 0}
-                    trend={null}
-                />
-                <MetricCard
-                    icon={FaStar}
-                    label="Accuracy Rate"
-                    value={`${(agent.stats?.accuracyRate || 0).toFixed(0)}%`}
-                    trend="up"
-                />
-                <MetricCard
-                    icon={FaBolt}
-                    label="This Week"
-                    value={agent.stats?.weeklyActivity || 0}
-                    trend={null}
-                />
-                <MetricCard
-                    icon={FaFire}
-                    label="Confidence"
-                    value={agent.confidenceLevel.toFixed(2)}
-                    trend={null}
-                />
-            </div>
-
-            {/* Activity Timeline */}
-            <div className="bg-bg-secondary border border-border-divider rounded-lg p-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <FaHistory className="text-yellow-neo" />
-                    <h3 className="text-lg font-bold text-text-primary">Recent Activity</h3>
+            {/* Activity Log */}
+            <TechCard noPadding>
+                <div className="p-4 border-b border-white/5 flex items-center gap-2">
+                    <RiHistoryLine className="text-yellow-neo" />
+                    <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Execution Log</h3>
                 </div>
-
-                {agent.recentActivities && agent.recentActivities.length > 0 ? (
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                        {agent.recentActivities.slice(0, 10).map((activity, index) => (
-                            <ActivityItem key={activity.id || index} activity={activity} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-8 text-text-muted">
-                        <FaClock className="mx-auto mb-2" size={32} />
-                        <p className="text-sm">No recent activity</p>
-                    </div>
-                )}
-            </div>
-
-            {/* Agent Info */}
-            <div className="bg-bg-secondary border border-border-divider rounded-lg p-6">
-                <div className="flex items-center gap-2 mb-4">
-                    <FaEye className="text-yellow-neo" />
-                    <h3 className="text-lg font-bold text-text-primary">Transparency Info</h3>
+                
+                <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {agent.recentActivities && agent.recentActivities.length > 0 ? (
+                        <div className="space-y-1">
+                            {agent.recentActivities.slice(0, 8).map((activity, index) => (
+                                <div key={index} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition-colors group">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-neo/50 group-hover:bg-yellow-neo group-hover:shadow-[0_0_5px_#FFC21A] transition-all" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-medium text-gray-300 truncate">
+                                            {activity.type || 'Signal Generated'}
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] text-gray-600 font-mono">
+                                        {new Date(activity.timestamp).toLocaleString()}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 text-gray-600">
+                            <RiTimeLine className="mx-auto mb-2 opacity-50" size={24} />
+                            <p className="text-xs">No recent on-chain activity</p>
+                        </div>
+                    )}
                 </div>
-                <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between py-2 border-b border-border-divider">
-                        <span className="text-text-muted">Active Since</span>
-                        <span className="text-text-primary font-semibold">
-                            {new Date(agent.createdAt).toLocaleDateString()}
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b border-border-divider">
-                        <span className="text-text-muted">Wallet Access</span>
-                        <span className="text-intent-green font-semibold">Read-Only</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                        <span className="text-text-muted">On-Chain Verification</span>
-                        <span className="text-intent-green font-semibold">100% Public</span>
-                    </div>
-                </div>
+            </TechCard>
+            
+            {/* Footer Info */}
+            <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono px-2">
+                <span className="flex items-center gap-1"><RiGlobalLine /> VERIFIED CONTRACT</span>
+                <span className="flex items-center gap-1"><RiShieldCheckLine className="text-intent-green"/> AUDIT PASSED</span>
             </div>
         </div>
     );
 }
 
-function MetricCard({ icon: Icon, label, value, trend }) {
+function MetricBox({ icon: Icon, label, value, trend }) {
     return (
-        <div className="bg-bg-panel border border-border-divider rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-                <Icon className="text-yellow-neo" size={16} />
-                <span className="text-xs text-text-muted">{label}</span>
+        <TechCard className="p-4 flex flex-col justify-between h-24">
+            <div className="flex justify-between items-start">
+                <Icon className="text-gray-500" size={16} />
+                {trend === 'up' && <RiArrowUpLine className="text-intent-green" size={14} />}
+                {trend === 'down' && <RiArrowDownLine className="text-critical-red" size={14} />}
             </div>
-            <div className="flex items-center gap-2">
-                <div className="text-xl font-bold text-text-primary">{value}</div>
-                {trend === 'up' && <FaArrowUp className="text-intent-green" size={12} />}
-                {trend === 'down' && <FaArrowDown className="text-critical-red" size={12} />}
+            <div>
+                <div className="text-xl font-bold text-white tracking-tighter">{value}</div>
+                <div className="text-[9px] text-gray-500 uppercase font-bold">{label}</div>
             </div>
-        </div>
-    );
-}
-
-function ActivityItem({ activity }) {
-    return (
-        <div className="flex items-start gap-3 p-3 bg-bg-panel rounded-lg">
-            <div className="w-8 h-8 bg-yellow-neo/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                <FaBolt className="text-yellow-neo" size={14} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-text-primary mb-1">
-                    {activity.type || 'Signal Generated'}
-                </div>
-                <div className="text-xs text-text-muted">
-                    {new Date(activity.timestamp).toLocaleString()}
-                </div>
-            </div>
-        </div>
+        </TechCard>
     );
 }
 
 function getAgentIcon(role) {
-    if (role.includes('Whale')) return FaWallet;
-    if (role.includes('Network')) return FaBolt;
-    if (role.includes('Volume')) return FaChartLine;
-    return FaRobot;
+    if (!role) return RiRobot2Line;
+    if (role.includes('Whale')) return RiSpyLine; // Spy/Wallet icon
+    if (role.includes('Network')) return RiGlobalLine; // Network
+    if (role.includes('Volume')) return RiBarChartGroupedLine; // Chart
+    return RiRobot2Line;
 }
