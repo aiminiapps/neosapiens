@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useWatchlist, POPULAR_TOKENS } from '@/contexts/WatchlistContext';
-import { 
-    RiAddLine, 
-    RiDeleteBinLine, 
-    RiRefreshLine, 
-    RiStarFill, 
-    RiArrowUpLine, 
-    RiArrowDownLine, 
+import {
+    RiAddLine,
+    RiDeleteBinLine,
+    RiRefreshLine,
+    RiStarFill,
+    RiArrowUpLine,
+    RiArrowDownLine,
     RiSearch2Line,
     RiTimeLine,
     RiCoinLine,
@@ -69,7 +69,7 @@ export default function TokenWatchlist() {
         hidden: { opacity: 0 },
         show: { opacity: 1, transition: { staggerChildren: 0.1 } }
     };
-    
+
     const itemVariants = {
         hidden: { opacity: 0, y: 10 },
         show: { opacity: 1, y: 0 }
@@ -77,13 +77,13 @@ export default function TokenWatchlist() {
 
     return (
         <div className="space-y-8">
-            
+
             {/* --- ADD TOKEN SECTION --- */}
             <TechCard className="p-6">
                 <form onSubmit={handleAddToken} className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
-                            <RiSearch2Line className="text-yellow-neo" /> 
+                            <RiSearch2Line className="text-yellow-neo" />
                             Token Contract Input
                         </h3>
                     </div>
@@ -101,8 +101,8 @@ export default function TokenWatchlist() {
                             {/* Input Scanline Effect */}
                             <div className="absolute bottom-0 left-0 h-[1px] bg-yellow-neo w-0 group-focus-within:w-full transition-all duration-500" />
                         </div>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={adding || !newTokenAddress.trim()}
                             className="px-6 py-2 bg-yellow-neo hover:bg-yellow-neo/90 text-black font-bold rounded-lg uppercase tracking-wider text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
@@ -110,7 +110,7 @@ export default function TokenWatchlist() {
                             {adding ? 'Scanning' : 'Add'}
                         </button>
                     </div>
-                    
+
                     {/* Quick Add Section */}
                     <div className="pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-3">
@@ -161,7 +161,7 @@ export default function TokenWatchlist() {
                         </div>
                     </TechCard>
                 ) : (
-                    <motion.div 
+                    <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="show"
@@ -188,7 +188,7 @@ export default function TokenWatchlist() {
 
 function TokenCard({ token, onRemove }) {
     const hasPrice = token.price !== null && token.price !== undefined;
-    
+
     // Determine color class based on price change logic
     const isPositive = parseFloat(token.priceChange24h) >= 0;
     const priceColorClass = isPositive ? 'text-intent-green' : 'text-critical-red';
@@ -206,14 +206,14 @@ function TokenCard({ token, onRemove }) {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-base font-bold text-white tracking-wide">{token.symbol}</h3>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-mono">ERC20</span>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-mono">BEP20</span>
                             </div>
                             <p className="text-[10px] font-mono text-gray-500 mt-0.5 truncate max-w-[120px]">
                                 {formatAddress(token.address)}
                             </p>
                         </div>
                     </div>
-                    
+
                     <button
                         onClick={onRemove}
                         className="p-2 text-gray-600 hover:text-critical-red hover:bg-critical-red/10 rounded transition-all opacity-0 group-hover:opacity-100"

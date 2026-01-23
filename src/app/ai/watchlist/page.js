@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 const SectionHeader = ({ title, subtitle }) => (
     <div className="relative mb-10 pl-6">
         <div className="absolute left-0 top-1 h-8 w-[2px] bg-yellow-neo rounded-full shadow-[0_0_10px_#FFC21A]" />
-        <motion.h1 
+        <motion.h1
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-3xl font-semibold tracking-tight text-white uppercase"
@@ -15,7 +15,7 @@ const SectionHeader = ({ title, subtitle }) => (
             {title}
         </motion.h1>
         {subtitle && (
-            <motion.p 
+            <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
@@ -30,18 +30,18 @@ const SectionHeader = ({ title, subtitle }) => (
 export default function WatchlistPage() {
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-[#050505]">
-            
+
             {/* --- BACKGROUND LAYER --- */}
             <div className="absolute inset-0 pointer-events-none">
                 {/* 1. Mesh Texture */}
-                <div 
+                <div
                     className="absolute inset-0 opacity-[0.03]"
-                    style={{ 
-                        backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', 
-                        backgroundSize: '32px 32px' 
-                    }} 
+                    style={{
+                        backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)',
+                        backgroundSize: '32px 32px'
+                    }}
                 />
-                
+
                 {/* 2. The Tech Line Animation */}
                 <svg className="absolute top-0 left-0 w-full h-full opacity-20" preserveAspectRatio="none">
                     <defs>
@@ -51,15 +51,15 @@ export default function WatchlistPage() {
                             <stop offset="100%" stopColor="#FFC21A" stopOpacity="0" />
                         </linearGradient>
                     </defs>
-                    <path 
-                        d="M 60 0 L 60 150 L 100 180 L 100 1000" 
-                        fill="none" 
-                        stroke="url(#lineGradient)" 
-                        strokeWidth="1" 
+                    <path
+                        d="M 60 0 L 60 150 L 100 180 L 100 1000"
+                        fill="none"
+                        stroke="url(#lineGradient)"
+                        strokeWidth="1"
                     />
                     <circle r="3" fill="#FFC21A">
-                        <animateMotion 
-                            dur="8s" 
+                        <animateMotion
+                            dur="8s"
                             repeatCount="indefinite"
                             path="M 60 0 L 60 150 L 100 180 L 100 1000"
                         />
@@ -72,10 +72,10 @@ export default function WatchlistPage() {
 
             {/* --- CONTENT LAYER --- */}
             <div className="relative z-10 container mx-auto px-6 md:px-12 py-10 max-w-7xl">
-                
-                <SectionHeader 
+
+                <SectionHeader
                     title={<span>Token <span className="text-yellow-neo">Watchlist</span></span>}
-                    subtitle="ERC-20 Monitor // On-Chain Tracking"
+                    subtitle="BEP-20 Monitor // BSC On-Chain Tracking"
                 />
 
                 <div className="pl-4 md:pl-8 border-l border-white/5">

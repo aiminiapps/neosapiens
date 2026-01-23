@@ -7,16 +7,16 @@ import toast from 'react-hot-toast';
 
 const WatchlistContext = createContext();
 
-// Popular ERC-20 token contracts (NOT wallet addresses!)
+// Popular BEP-20 token contracts on BSC (NOT wallet addresses!)
 export const POPULAR_TOKENS = [
-    { symbol: 'USDT', name: 'Tether USD', address: '0xdac17f958d2ee523a2206206994597c13d831ec7' },
-    { symbol: 'USDC', name: 'USD Coin', address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' },
-    { symbol: 'DAI', name: 'Dai Stablecoin', address: '0x6b175474e89094c44da98b954eedeac495271d0f' },
-    { symbol: 'WETH', name: 'Wrapped Ether', address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' },
-    { symbol: 'UNI', name: 'Uniswap', address: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984' },
-    { symbol: 'LINK', name: 'Chainlink', address: '0x514910771af9ca656af840dff83e8264ecf986ca' },
-    { symbol: 'SHIB', name: 'Shiba Inu', address: '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce' },
-    { symbol: 'PEPE', name: 'Pepe', address: '0x6982508145454ce325ddbe47a25d4ec3d2311933' },
+    { symbol: 'USDT', name: 'Tether USD (BSC)', address: '0x55d398326f99059fF775485246999027B3197955' },
+    { symbol: 'USDC', name: 'USD Coin (BSC)', address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d' },
+    { symbol: 'BUSD', name: 'Binance USD', address: '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56' },
+    { symbol: 'WBNB', name: 'Wrapped BNB', address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' },
+    { symbol: 'CAKE', name: 'PancakeSwap', address: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82' },
+    { symbol: 'ETH', name: 'Binance-Pegged ETH', address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8' },
+    { symbol: 'BTCB', name: 'Binance-Pegged BTC', address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c' },
+    { symbol: 'DAI', name: 'Dai Token (BSC)', address: '0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3' },
 ];
 
 export function WatchlistProvider({ children }) {
