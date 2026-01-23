@@ -10,6 +10,7 @@ export default function PortfolioPieChart({ portfolio }) {
     useEffect(() => {
         if (!chartRef.current || !portfolio) return;
 
+        // Initialize chart only once
         if (!chartInstance.current) {
             chartInstance.current = echarts.init(chartRef.current);
         }
@@ -20,7 +21,15 @@ export default function PortfolioPieChart({ portfolio }) {
                 value: t.value,
                 name: `${t.symbol} (${t.percentage.toFixed(1)}%)`
             }))
-        ];
+        ].filter(item => item.value > 0); // Filter out zero values
+
+        console.log('[PieChart] Chart data:', data);
+
+        // If no data, show message
+        if (data.length === 0) {
+            console.log('[PieChart] No data to display');
+            return;
+        }
 
         const option = {
             backgroundColor: 'transparent',
@@ -32,7 +41,9 @@ export default function PortfolioPieChart({ portfolio }) {
                 textStyle: {
                     color: '#F2F2F2',
                 },
-                formatter: '{b}: ${c}<br/>({d}%)',
+                formatter: (params) => {
+                    return `${params.name}<br/>$${params.value.toFixed(2)} (${params.percent}%)`;
+                },
             },
             legend: {
                 orient: 'vertical',
@@ -70,7 +81,7 @@ export default function PortfolioPieChart({ portfolio }) {
             ],
         };
 
-        chartInstance.current.setOption(option);
+        chartInstance.current.setOption(option, true); // Use notMerge to replace old data
 
         const handleResize = () => {
             chartInstance.current?.resize();
@@ -79,12 +90,17 @@ export default function PortfolioPieChart({ portfolio }) {
 
         return () => {
             window.removeEventListener('resize', handleResize);
+            // Don't dispose here - only dispose on component unmount
         };
     }, [portfolio]);
 
     useEffect(() => {
+        // Cleanup only on component unmount
         return () => {
-            chartInstance.current?.dispose();
+            if (chartInstance.current) {
+                chartInstance.current.dispose();
+                chartInstance.current = null;
+            }
         };
     }, []);
 
