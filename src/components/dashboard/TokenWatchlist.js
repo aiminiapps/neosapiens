@@ -1,22 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWatchlist, POPULAR_TOKENS } from '@/contexts/WatchlistContext';
-import {
-    RiAddLine,
-    RiDeleteBinLine,
-    RiRefreshLine,
-    RiStarFill,
-    RiArrowUpLine,
-    RiArrowDownLine,
+import { 
+    RiAddLine, 
+    RiDeleteBinLine, 
+    RiRefreshLine, 
+    RiStarFill, 
+    RiArrowUpLine, 
+    RiArrowDownLine, 
     RiSearch2Line,
     RiTimeLine,
     RiCoinLine,
     RiBarChartGroupedLine,
-    RiDatabase2Line
+    RiDatabase2Line,
+    RiErrorWarningLine
 } from 'react-icons/ri';
-import { formatAddress, formatCurrency, formatLargeNumber, formatPercentage, getPercentageColor } from '@/lib/utils/formatters';
+import { formatAddress, formatCurrency, formatLargeNumber, formatPercentage } from '@/lib/utils/formatters';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// --- API UTILS (Free CoinGecko Endpoint for BSC) ---
+
+async function fetchBSCTokenData(contractAddress) {
+    try {
+        // CoinGecko Free API - Rate limits apply (approx 10-30 calls/min)
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/binance-smart-chain/contract/${contractAddress}`);
+        
+        if (!response.ok) {
+            console.warn(`Token data fetch failed for ${contractAddress}`);
+            return null;
+        }
+
+        const data = await response.json();
+        
+        return {
+            image: data.image?.large || data.image?.small,
+            name: data.name,
+            symbol: data.symbol.toUpperCase(),
+            price: data.market_data?.current_price?.usd,
+            priceChange24h: data.market_data?.price_change_percentage_24h,
+            marketCap: data.market_data?.market_cap?.usd,
+            volume24h: data.market_data?.total_volume?.usd,
+            high24h: data.market_data?.high_24h?.usd,
+            low24h: data.market_data?.low_24h?.usd,
+            circulatingSupply: data.market_data?.circulating_supply,
+            totalSupply: data.market_data?.total_supply,
+            lastUpdate: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error("Error fetching BSC token data:", error);
+        return null;
+    }
+}
 
 // --- STYLED SUBCOMPONENTS ---
 
@@ -28,13 +63,20 @@ const TechCard = ({ children, className = "" }) => (
     </div>
 );
 
-const TokenBadge = ({ label, onClick, disabled }) => (
+const TokenBadge = ({ label, image, onClick, disabled }) => (
     <button
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className="px-3 py-1.5 bg-white/5 hover:bg-yellow-neo/10 border border-white/5 hover:border-yellow-neo/30 rounded text-xs font-medium text-gray-400 hover:text-yellow-neo uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-yellow-neo/10 border border-white/5 hover:border-yellow-neo/30 rounded text-xs font-medium text-gray-400 hover:text-yellow-neo uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
     >
+        {image ? (
+            <img src={image} alt={label} className="w-4 h-4 rounded-full" />
+        ) : (
+            <div className="w-4 h-4 rounded-full bg-yellow-neo/20 group-hover:bg-yellow-neo flex items-center justify-center text-[8px] text-yellow-neo group-hover:text-black font-bold">
+                {label[0]}
+            </div>
+        )}
         {label}
     </button>
 );
@@ -51,6 +93,7 @@ export default function TokenWatchlist() {
         if (!newTokenAddress.trim()) return;
 
         setAdding(true);
+        // Pass the address; the Context or the TokenCard will handle the enrichment
         const success = await addToken(newTokenAddress.trim());
         if (success) {
             setNewTokenAddress('');
@@ -69,7 +112,7 @@ export default function TokenWatchlist() {
         hidden: { opacity: 0 },
         show: { opacity: 1, transition: { staggerChildren: 0.1 } }
     };
-
+    
     const itemVariants = {
         hidden: { opacity: 0, y: 10 },
         show: { opacity: 1, y: 0 }
@@ -77,15 +120,18 @@ export default function TokenWatchlist() {
 
     return (
         <div className="space-y-8">
-
+            
             {/* --- ADD TOKEN SECTION --- */}
             <TechCard className="p-6">
                 <form onSubmit={handleAddToken} className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center gap-2">
-                            <RiSearch2Line className="text-yellow-neo" />
-                            Token Contract Input
+                            <RiSearch2Line className="text-yellow-neo" /> 
+                            BSC Token Input
                         </h3>
+                        <span className="text-[10px] bg-yellow-neo/10 text-yellow-neo px-2 py-0.5 rounded border border-yellow-neo/20 font-mono">
+                            NETWORK: BNB CHAIN
+                        </span>
                     </div>
 
                     <div className="flex gap-3">
@@ -94,15 +140,14 @@ export default function TokenWatchlist() {
                                 type="text"
                                 value={newTokenAddress}
                                 onChange={(e) => setNewTokenAddress(e.target.value)}
-                                placeholder="Paste 0x contract address..."
+                                placeholder="Paste BEP-20 contract address (0x...)"
                                 className="w-full px-5 py-3 bg-[#050505] border border-white/10 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-yellow-neo/50 focus:ring-1 focus:ring-yellow-neo/20 transition-all font-mono text-sm"
                                 disabled={adding}
                             />
-                            {/* Input Scanline Effect */}
                             <div className="absolute bottom-0 left-0 h-[1px] bg-yellow-neo w-0 group-focus-within:w-full transition-all duration-500" />
                         </div>
-                        <button
-                            type="submit"
+                        <button 
+                            type="submit" 
                             disabled={adding || !newTokenAddress.trim()}
                             className="px-6 py-2 bg-yellow-neo hover:bg-yellow-neo/90 text-black font-bold rounded-lg uppercase tracking-wider text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
@@ -110,13 +155,13 @@ export default function TokenWatchlist() {
                             {adding ? 'Scanning' : 'Add'}
                         </button>
                     </div>
-
+                    
                     {/* Quick Add Section */}
                     <div className="pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-3">
                             <RiStarFill className="text-yellow-neo" size={12} />
                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                Quick Add Popular Tokens
+                                Popular BEP-20 Tokens
                             </span>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -124,6 +169,7 @@ export default function TokenWatchlist() {
                                 <TokenBadge
                                     key={token.address}
                                     label={token.symbol}
+                                    image={token.image} // Assuming POPULAR_TOKENS might have hardcoded images, or fallback
                                     onClick={() => handleQuickAdd(token.address)}
                                     disabled={adding || watchlist.some(t => t.address.toLowerCase() === token.address.toLowerCase())}
                                 />
@@ -148,7 +194,7 @@ export default function TokenWatchlist() {
                         className="flex items-center gap-2 text-xs font-mono text-gray-500 hover:text-yellow-neo transition-colors disabled:opacity-50"
                     >
                         <RiRefreshLine className={loading ? 'animate-spin' : ''} />
-                        SYNC DATA
+                        SYNC PRICES
                     </button>
                 </div>
 
@@ -157,11 +203,11 @@ export default function TokenWatchlist() {
                         <div className="text-center py-16">
                             <RiDatabase2Line className="mx-auto text-gray-600 mb-4" size={32} />
                             <p className="text-gray-400 text-sm">Watchlist is empty.</p>
-                            <p className="text-xs text-gray-600 mt-1">Add a token contract to begin monitoring.</p>
+                            <p className="text-xs text-gray-600 mt-1">Add a BSC token contract to begin monitoring.</p>
                         </div>
                     </TechCard>
                 ) : (
-                    <motion.div
+                    <motion.div 
                         variants={containerVariants}
                         initial="hidden"
                         animate="show"
@@ -171,7 +217,7 @@ export default function TokenWatchlist() {
                             {watchlist.map((token) => (
                                 <motion.div key={token.address} variants={itemVariants} layout>
                                     <TokenCard
-                                        token={token}
+                                        initialToken={token}
                                         onRemove={() => removeToken(token.address)}
                                     />
                                 </motion.div>
@@ -184,36 +230,84 @@ export default function TokenWatchlist() {
     );
 }
 
-// --- TOKEN CARD COMPONENT ---
+// --- TOKEN CARD COMPONENT (With Image Fetching) ---
 
-function TokenCard({ token, onRemove }) {
+function TokenCard({ initialToken, onRemove }) {
+    // Local state to merge context data with fetched API data (icons/prices)
+    const [token, setToken] = useState(initialToken);
+    const [imageError, setImageError] = useState(false);
+
+    // Fetch rich data (Icon, Price) on mount if missing
+    useEffect(() => {
+        let isMounted = true;
+        
+        const enrichTokenData = async () => {
+            // Only fetch if we don't have an image or the price looks stale/missing
+            if (!initialToken.image || !initialToken.price) {
+                const enriched = await fetchBSCTokenData(initialToken.address);
+                if (enriched && isMounted) {
+                    setToken(prev => ({ ...prev, ...enriched }));
+                }
+            }
+        };
+
+        enrichTokenData();
+
+        return () => { isMounted = false; };
+    }, [initialToken.address]);
+
+    // Keep local state in sync if parent updates (e.g. manual refresh)
+    useEffect(() => {
+        setToken(prev => ({ ...prev, ...initialToken }));
+    }, [initialToken]);
+
     const hasPrice = token.price !== null && token.price !== undefined;
-
-    // Determine color class based on price change logic
     const isPositive = parseFloat(token.priceChange24h) >= 0;
     const priceColorClass = isPositive ? 'text-intent-green' : 'text-critical-red';
     const bgGlowClass = isPositive ? 'bg-intent-green/5' : 'bg-critical-red/5';
 
     return (
         <TechCard className="group h-full flex flex-col justify-between p-0 hover:border-white/20">
-            {/* Header / Top Section */}
+            {/* Top Section */}
             <div className="p-5">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border border-white/5 ${bgGlowClass} text-gray-200 font-bold text-sm`}>
-                            {token.symbol[0]}
+                        {/* TOKEN ICON - PRIORITY */}
+                        <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center border border-white/5 ${bgGlowClass} overflow-hidden`}>
+                            {token.image && !imageError ? (
+                                <img 
+                                    src={token.image} 
+                                    alt={token.symbol} 
+                                    className="w-full h-full object-cover"
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <span className="text-lg font-bold text-gray-400">
+                                    {token.symbol ? token.symbol[0] : '?'}
+                                </span>
+                            )}
                         </div>
+                        
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="text-base font-bold text-white tracking-wide">{token.symbol}</h3>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-mono">BEP20</span>
+                                <h3 className="text-lg font-bold text-white tracking-wide leading-none">{token.symbol}</h3>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5 font-mono">BEP-20</span>
                             </div>
-                            <p className="text-[10px] font-mono text-gray-500 mt-0.5 truncate max-w-[120px]">
-                                {formatAddress(token.address)}
-                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                                <p className="text-[10px] font-mono text-gray-500 truncate max-w-[100px]" title={token.address}>
+                                    {formatAddress(token.address)}
+                                </p>
+                                <button 
+                                    onClick={() => navigator.clipboard.writeText(token.address)}
+                                    className="text-gray-600 hover:text-yellow-neo transition-colors"
+                                    title="Copy Address"
+                                >
+                                    <RiCoinLine size={10} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-
+                    
                     <button
                         onClick={onRemove}
                         className="p-2 text-gray-600 hover:text-critical-red hover:bg-critical-red/10 rounded transition-all opacity-0 group-hover:opacity-100"
@@ -237,8 +331,9 @@ function TokenCard({ token, onRemove }) {
                         )}
                     </div>
                 ) : (
-                    <div className="mb-6 py-2">
-                        <span className="text-xs text-gray-500 font-mono bg-white/5 px-2 py-1 rounded">Price Unavailable</span>
+                    <div className="mb-6 py-2 flex items-center gap-2">
+                        <RiErrorWarningLine className="text-yellow-neo" />
+                        <span className="text-xs text-gray-500 font-mono">Price data unavailable</span>
                     </div>
                 )}
 
@@ -258,7 +353,7 @@ function TokenCard({ token, onRemove }) {
                     {token.lastUpdate ? new Date(token.lastUpdate).toLocaleTimeString() : 'Just now'}
                 </div>
                 <div className="text-[10px] text-gray-600 font-mono">
-                    DEC: {token.decimals}
+                    BNB CHAIN
                 </div>
             </div>
         </TechCard>
