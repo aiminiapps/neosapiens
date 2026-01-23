@@ -36,9 +36,6 @@ export default function DashboardSidebar() {
                 className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-black/90 backdrop-blur-xl border border-yellow-neo/50 text-yellow-neo rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,194,26,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 group"
             >
                 {isOpen ? <RiCloseLine size={24} /> : <RiMenu4Line size={24} />}
-                {/* Corner Accents for Button */}
-                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/50" />
-                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/50" />
             </button>
 
             {/* Mobile Overlay */}
@@ -56,7 +53,7 @@ export default function DashboardSidebar() {
 
             {/* Sidebar Container */}
             <aside
-                className={`fixed top-0 left-0 h-screen z-40 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                className={`fixed sm:sticky top-0 left-0 h-screen z-40 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
                     }`}
                 style={{ width: '290px' }}
             >
