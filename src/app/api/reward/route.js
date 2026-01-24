@@ -1,22 +1,23 @@
 import { NextResponse } from 'next/server';
 
-// ✅ POTL Token Transaction API - Updated for LabelX
+// ✅ NEOS Token Transaction API - Updated for NEO-SAPIENS Ecosystem
 
 const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 const TOKEN_CONTRACT_ADDRESS = process.env.TOKEN_CONTRACT_ADDRESS;
 const BSC_RPC_URL = 'https://bsc-dataseed1.binance.org';
 
-console.log('🔧 POTL Transaction API Configuration:');
+console.log('🔧 NEOS Transaction API Configuration:');
 console.log('- Admin Key:', ADMIN_PRIVATE_KEY ? '✅ Present' : '❌ Missing');
 console.log('- Token Address:', TOKEN_CONTRACT_ADDRESS ? '✅ Present' : '❌ Missing');
 
 const TRANSFER_FUNCTION_SIGNATURE = '0xa9059cbb';
 
-// Nonce tracking
+// Nonce tracking to prevent replay attacks
 const processedNonces = new Set();
+// Clear nonces every 10 minutes to manage memory
 setInterval(() => processedNonces.clear(), 600000);
 
-// ✅ Direct RPC call
+// ✅ Direct RPC call helper
 async function directRPCCall(method, params = []) {
   const response = await fetch(BSC_RPC_URL, {
     method: 'POST',
@@ -34,7 +35,7 @@ async function directRPCCall(method, params = []) {
   return data.result;
 }
 
-// ✅ Create transfer data for ERC-20
+// ✅ Create BEP-20 transfer data manually
 function createTransferData(recipientAddress, tokenAmountWei) {
   const cleanAddress = recipientAddress.replace('0x', '').toLowerCase();
   const paddedAddress = cleanAddress.padStart(64, '0');
@@ -42,24 +43,25 @@ function createTransferData(recipientAddress, tokenAmountWei) {
   const paddedAmount = amountHex.padStart(64, '0');
   const data = TRANSFER_FUNCTION_SIGNATURE + paddedAddress + paddedAmount;
   
-  console.log('🔍 Transfer Data Construction:');
-  console.log('- Function Sig:', TRANSFER_FUNCTION_SIGNATURE);
-  console.log('- Address:', recipientAddress, '→', paddedAddress);
-  console.log('- Amount Wei:', tokenAmountWei, '→', paddedAmount);
-  console.log('- Final Data:', data);
+  // Debug log (optional, can be removed in prod)
+  // console.log('🔍 Transfer Data Construction:');
+  // console.log('- Function Sig:', TRANSFER_FUNCTION_SIGNATURE);
+  // console.log('- Address:', recipientAddress, '→', paddedAddress);
+  // console.log('- Amount Wei:', tokenAmountWei, '→', paddedAmount);
   
   return data;
 }
 
 export async function POST(request) {
   const startTime = Date.now();
-  console.log('\n🎯 POTL Transaction API called at:', new Date().toISOString());
+  console.log('\n🎯 NEOS Transaction API called at:', new Date().toISOString());
 
   try {
     // Environment validation
     if (!ADMIN_PRIVATE_KEY || !TOKEN_CONTRACT_ADDRESS) {
+      console.error('❌ Server Config Error: Missing Env Variables');
       return NextResponse.json({
-        error: 'Missing environment variables'
+        error: 'Server misconfiguration: Missing environment variables'
       }, { status: 500 });
     }
 
@@ -67,9 +69,9 @@ export async function POST(request) {
     const body = await request.json();
     const { taskId, address, message, signature, nonce, expiry, reward, isWelcomeBonus } = body;
 
-    console.log('📦 Processing:', isWelcomeBonus ? 'Welcome Bonus' : `Task ${taskId}`);
+    console.log('📦 Processing:', isWelcomeBonus ? 'Welcome Bonus' : `Task: ${taskId}`);
     console.log('👤 To User:', address);
-    console.log('💰 Amount:', reward, 'POTL');
+    console.log('💰 Amount:', reward, 'NEOS');
 
     // Load ethers v6
     const ethers = await import('ethers');
@@ -91,7 +93,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Validate address
+    // Validate address format
     if (!ethersLib.isAddress(address)) {
       return NextResponse.json({ error: 'Invalid address format' }, { status: 400 });
     }
@@ -100,6 +102,7 @@ export async function POST(request) {
     try {
       const recoveredAddress = ethersLib.verifyMessage(message, signature);
       if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+        console.error('❌ Signature mismatch');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
       console.log('✅ Signature verified');
@@ -121,28 +124,35 @@ export async function POST(request) {
 
     processedNonces.add(nonceKey);
 
-    // Task validation - Updated rewards for LabelX
+    // ✅ Task validation - Updated for NEO-SAPIENS Task Center
     const validTasks = {
       followX: 100,
+      likeX: 50,
       commentX: 75,
       retweetX: 60,
       joinTelegram: 80,
-      likeX: 50,
       shareX: 90,
-      joinCommunity: 70,
-      openMiniApp: 80,
       welcomeBonus: 10
     };
 
     if (!isWelcomeBonus) {
-      if (!validTasks[taskId] || reward !== validTasks[taskId]) {
-        return NextResponse.json({ error: 'Invalid task reward' }, { status: 400 });
+      if (!validTasks[taskId]) {
+        return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
+      }
+      if (reward !== validTasks[taskId]) {
+        console.warn(`⚠️ Reward mismatch. Req: ${reward}, Expected: ${validTasks[taskId]}`);
+        return NextResponse.json({ error: 'Invalid reward amount for this task' }, { status: 400 });
+      }
+    } else {
+      // Validate welcome bonus amount
+      if (reward !== validTasks.welcomeBonus) {
+         return NextResponse.json({ error: 'Invalid welcome bonus amount' }, { status: 400 });
       }
     }
 
     console.log('✅ All validations passed');
 
-    // Test RPC
+    // Test RPC connection
     const blockNumber = await directRPCCall('eth_blockNumber');
     console.log('✅ RPC working, block:', parseInt(blockNumber, 16));
 
@@ -152,9 +162,10 @@ export async function POST(request) {
       directRPCCall('eth_gasPrice')
     ]);
 
+    // Add 20% buffer to gas price for faster inclusion
     const bufferedGasPrice = Math.floor(parseInt(gasPrice, 16) * 1.2);
 
-    // Token amount calculation
+    // Token amount calculation (18 decimals standard for BEP-20)
     const decimals = 18;
     const tokenAmountWei = ethersLib.parseUnits(reward.toString(), decimals);
     console.log('💰 Token amount (wei):', tokenAmountWei.toString());
@@ -162,15 +173,15 @@ export async function POST(request) {
     // Transaction data encoding
     const transactionData = createTransferData(address, tokenAmountWei.toString());
 
-    // Build transaction
+    // Build raw transaction
     const rawTransaction = {
       nonce: adminNonce,
       gasPrice: '0x' + bufferedGasPrice.toString(16),
-      gasLimit: '0x186A0', // 100,000
+      gasLimit: '0x186A0', // 100,000 gas limit (usually enough for transfer)
       to: TOKEN_CONTRACT_ADDRESS,
       value: '0x0',
       data: transactionData,
-      chainId: 56
+      chainId: 56 // 56 for BSC Mainnet
     };
 
     console.log('🔨 Transaction built');
@@ -180,7 +191,7 @@ export async function POST(request) {
     const txHash = await directRPCCall('eth_sendRawTransaction', [signedTx]);
     console.log('📤 Transaction sent:', txHash);
 
-    // Wait for confirmation (up to 30 seconds)
+    // Wait for confirmation (polling loop - max 30s)
     let receipt = null;
     let attempts = 0;
 
@@ -189,13 +200,14 @@ export async function POST(request) {
         receipt = await directRPCCall('eth_getTransactionReceipt', [txHash]);
         if (receipt) break;
       } catch (error) {
-        // Not ready yet
+        // Receipt not available yet, continue waiting
       }
 
       attempts++;
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
+    // If still no receipt after 30s, return pending status
     if (!receipt) {
       return NextResponse.json({
         success: true,
@@ -204,14 +216,16 @@ export async function POST(request) {
         recipient: address,
         status: 'pending',
         explorer: `https://bscscan.com/tx/${txHash}`,
-        message: 'Transaction sent, confirmation pending'
+        message: 'Transaction sent, confirmation pending on chain'
       });
     }
 
+    // Check receipt status (0x1 = success)
     const status = parseInt(receipt.status, 16);
     if (status !== 1) {
+      console.error('❌ Transaction failed on chain');
       return NextResponse.json({
-        error: 'Transaction failed on chain',
+        error: 'Transaction reverted on blockchain',
         txHash,
         explorer: `https://bscscan.com/tx/${txHash}`
       }, { status: 500 });
@@ -219,8 +233,8 @@ export async function POST(request) {
 
     const processingTime = Date.now() - startTime;
 
-    console.log('🎉 POTL TRANSACTION SUCCESSFUL!');
-    console.log('✅ Sent', reward, 'POTL from', adminWallet.address, 'to', address);
+    console.log('🎉 NEOS TRANSACTION SUCCESSFUL!');
+    console.log('✅ Sent', reward, 'NEOS from', adminWallet.address, 'to', address);
     console.log('✅ TX Hash:', txHash);
     console.log('⏱️ Processing time:', processingTime, 'ms');
 
@@ -230,7 +244,7 @@ export async function POST(request) {
       blockNumber: parseInt(receipt.blockNumber, 16),
       gasUsed: parseInt(receipt.gasUsed, 16),
       amount: reward,
-      symbol: 'POTLP',
+      symbol: 'NEOS',
       recipient: address,
       sender: adminWallet.address,
       processingTime,
@@ -257,12 +271,13 @@ export async function GET() {
 
     return NextResponse.json({
       status: 'healthy',
+      system: 'NEOS-SAPIENS Reward Gateway',
       mode: 'REAL_TRANSACTIONS_BSC',
       blockNumber: parseInt(blockNumber, 16),
       adminWallet: adminWallet.address,
       tokenContract: TOKEN_CONTRACT_ADDRESS,
-      tokenSymbol: 'POTL',
-      network: 'Binance Smart Chain',
+      tokenSymbol: 'NEOS',
+      network: 'Binance Smart Chain (Mainnet)',
       chainId: 56,
       rpcUrl: BSC_RPC_URL,
       timestamp: new Date().toISOString()
