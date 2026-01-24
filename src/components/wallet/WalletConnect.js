@@ -87,9 +87,9 @@ export default function WalletConnect() {
     if (isConnected && address) {
         return (
             <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-[#111] border border-white/10 rounded-full">
+                <div className="hidden sm:flex items-center gap-3 px-4 py-1.5 bg-[#111] border border-white/10 rounded-lg">
                     <div className="flex flex-col items-end leading-none">
-                        <span className="text-[10px] text-gray-500 font-bold uppercase">Balance</span>
+                        {/* <span className="text-[10px] text-gray-500 font-bold uppercase">Balance</span> */}
                         <span className="text-sm font-mono font-bold text-white">
                             {balance ? parseFloat(balance).toFixed(4) : '0.00'} <span className="text-yellow-neo">{balanceSymbol}</span>
                         </span>
@@ -103,7 +103,7 @@ export default function WalletConnect() {
 
                 <button 
                     onClick={handleDisconnect}
-                    className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 text-gray-400 transition-all"
+                    className="p-2 rounded-full bg-red-500/20 border border-red-500/50 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 text-white transition-all"
                     title="Disconnect"
                 >
                     <RiShutDownLine size={18} />
