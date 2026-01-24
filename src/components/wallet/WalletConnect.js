@@ -47,9 +47,6 @@ const PremiumBackground = () => (
                 backgroundSize: '24px 24px' 
             }} 
         />
-        <svg className="absolute top-0 right-0 w-full h-full opacity-10" preserveAspectRatio="none">
-            <path d="M0,0 L100,0 L50,100 L50,1000" fill="none" stroke="currentColor" strokeWidth="1" className="text-white" />
-        </svg>
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-yellow-neo/5 blur-[80px] rounded-full" />
     </div>
 );
@@ -129,8 +126,17 @@ export default function WalletConnect() {
                 <div className="fixed inset-0 z-[100] bg-[#050505] flex items-center justify-center p-4">
                     {/* Page Background */}
                     <div className="absolute inset-0 pointer-events-none">
-                         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-                         <svg className="absolute top-0 left-0 w-full h-full opacity-20" preserveAspectRatio="none">
+                        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+                        <svg className="absolute top-0 left-0 w-full h-[50%] opacity-20" preserveAspectRatio="none">
+                            <path d="M 60 0 L 60 150 L 100 180 L 100 1000" fill="none" stroke="#FFC21A" strokeWidth="1" />
+                        </svg>
+                        <svg className="absolute top-0 right-0 w-full h-[50%] opacity-20 -scale-x-100" preserveAspectRatio="none">
+                            <path d="M 60 0 L 60 150 L 100 180 L 100 1000" fill="none" stroke="#FFC21A" strokeWidth="1" />
+                        </svg>
+                        <svg className="absolute bottom-0 left-0 w-full h-[50%] opacity-20 -scale-y-100" preserveAspectRatio="none">
+                            <path d="M 60 0 L 60 150 L 100 180 L 100 1000" fill="none" stroke="#FFC21A" strokeWidth="1" />
+                        </svg>
+                        <svg className="absolute bottom-0 right-0 w-full h-[50%] opacity-20 -scale-x-100 -scale-y-100" preserveAspectRatio="none">
                             <path d="M 60 0 L 60 150 L 100 180 L 100 1000" fill="none" stroke="#FFC21A" strokeWidth="1" />
                         </svg>
                     </div>
