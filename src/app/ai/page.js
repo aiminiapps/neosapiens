@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@/contexts/WalletContext';
-import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { analyzeWalletPortfolio, generatePortfolioRecommendations, getPortfolioStrength } from '@/lib/ai/portfolioAnalysis';
 import { getCryptoNews, analyzeNewsSentiment, getMarketData, generateMarketSignals } from '@/lib/api/cryptoNews';
