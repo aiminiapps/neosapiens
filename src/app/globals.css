@@ -179,25 +179,6 @@ code {
   animation: slide-up 0.5s ease-out;
 }
 
-/* Responsive Utilities */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 1rem;
-  }
-  
-  h1 {
-    font-size: 2rem;
-  }
-  
-  h2 {
-    font-size: 1.75rem;
-  }
-  
-  h3 {
-    font-size: 1.5rem;
-  }
-}
-
 /* Loading State */
 .spinner {
   border: 3px solid var(--border-divider);

@@ -7,11 +7,10 @@ import { motion } from 'framer-motion';
 
 const SectionHeader = ({ title, subtitle }) => (
     <div className="relative mb-10 pl-6">
-        <div className="absolute left-0 top-1 h-8 w-[2px] bg-yellow-neo rounded-full shadow-[0_0_10px_#FFC21A]" />
         <motion.h1 
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-3xl font-semibold tracking-tight text-white uppercase"
+            className="text-xl sm:text-3xl font-semibold tracking-tight text-white"
         >
             {title}
         </motion.h1>
@@ -20,9 +19,9 @@ const SectionHeader = ({ title, subtitle }) => (
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-gray-500 text-sm mt-1 font-mono"
+                className="text-gray-500 text-sm mt-1 "
             >
-                // {subtitle}
+                 {subtitle}
             </motion.p>
         )}
     </div>
@@ -30,7 +29,7 @@ const SectionHeader = ({ title, subtitle }) => (
 
 export default function AgentsPage() {
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#050505]">
+        <div className="relative min-h-screen py-10 w-full overflow-hidden bg-[#050505]">
             
             {/* --- BACKGROUND LAYER --- */}
             <div className="absolute inset-0 pointer-events-none">
@@ -72,14 +71,14 @@ export default function AgentsPage() {
             </div>
 
             {/* --- CONTENT LAYER --- */}
-            <div className="relative z-10 container mx-auto px-6 md:px-12 py-10 max-w-7xl">
+            <div className="relative z-10 container mx-auto px-4 md:px-12 py-10 max-w-7xl">
                 
                 <SectionHeader 
                     title={<span>AI <span className="text-yellow-neo">Agents</span></span>}
-                    subtitle="Neural Network Status // Active Units"
+                    subtitle="Active Units"
                 />
 
-                <div className="pl-4 md:pl-8 border-l border-white/5">
+                <div className="pl-2 md:pl-8 border-l border-white/5">
                     <AIAgentsDashboard />
                 </div>
             </div>

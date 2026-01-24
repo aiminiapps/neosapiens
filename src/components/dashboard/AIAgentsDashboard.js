@@ -143,7 +143,7 @@ export default function AIAgentsDashboard() {
                 <div className="lg:col-span-1 space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <RiCpuLine className="text-yellow-neo" />
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        <h3 className="sm:text-2xl text-xl font-semibold text-gray-400">
                             Neural Units
                         </h3>
                     </div>
@@ -191,12 +191,12 @@ export default function AIAgentsDashboard() {
 function StatCard({ icon: Icon, label, value, color }) {
     return (
         <TechCard className="flex items-center gap-4">
-            <div className={`p-3 rounded-lg bg-white/5 border border-white/5 ${color} bg-opacity-10`}>
+            <div className={`pb-3`}>
                 <Icon size={24} className={color} />
             </div>
             <div>
                 <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{label}</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{label}</div>
             </div>
         </TechCard>
     );
@@ -215,8 +215,6 @@ function AgentListItem({ agent, isSelected, onClick }) {
                 }
             `}
         >
-            {/* Active Indicator Bar */}
-            {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-neo" />}
 
             <div className="flex items-center gap-4">
                 <div 
@@ -233,9 +231,6 @@ function AgentListItem({ agent, isSelected, onClick }) {
                         <span className={`text-sm font-bold tracking-wide ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                             {agent.name}
                         </span>
-                        {agent.status === 'active' && (
-                            <span className="flex h-2 w-2 rounded-full bg-intent-green shadow-[0_0_5px_#00ff00]"></span>
-                        )}
                     </div>
                     <div className="text-xs text-gray-500 font-mono mt-0.5 truncate">
                         {agent.role}
