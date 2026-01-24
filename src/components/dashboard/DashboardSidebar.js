@@ -13,7 +13,7 @@ import {
     RiMenu4Line,
     RiCloseLine,
     RiShieldCheckLine,
-    RiCpuLine
+    RiListCheck3
 } from 'react-icons/ri';
 
 const sidebarItems = [
@@ -22,6 +22,7 @@ const sidebarItems = [
     { id: 'watchlist', label: 'Watchlist', icon: RiEye2Line, href: '/ai/watchlist' },
     { id: 'agents', label: 'AI Agents', icon: RiRobot2Line, href: '/ai/agents' },
     { id: 'analytics', label: 'Analytics', icon: RiPieChart2Line, href: '/ai/analytics' },
+    { id: 'tasks', label: 'Tasks', icon: RiListCheck3, href: '/ai/tasks' },
 ];
 
 export default function DashboardSidebar() {
@@ -196,7 +197,7 @@ export default function DashboardSidebar() {
                                         <RiShieldCheckLine className="text-intent-green" />
                                         System Optimal
                                     </span>
-                                    <span>V.1.0.4</span>
+                                    <span>V.1.0.2</span>
                                 </div>
                                 
                                 {/* Resource Bar */}
