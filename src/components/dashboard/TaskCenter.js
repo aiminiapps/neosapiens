@@ -368,7 +368,7 @@ export default function TaskCenter() {
       description: 'Follow @NeoSapiensAI for governance updates & protocols',
       reward: 100,
       icon: RiTwitterXFill,
-      action: 'https://twitter.com/intent/follow?screen_name=NeoSapiensAI',
+      action: 'https://twitter.com/intent/follow?screen_name=Neosapiens_ai',
       type: 'protocol',
       difficulty: 'low'
     },
@@ -378,7 +378,7 @@ export default function TaskCenter() {
       description: 'Like the latest system update on X',
       reward: 50,
       icon: FaThumbsUp,
-      action: 'https://x.com/NeoSapiensAI',
+      action: 'https://x.com/Neosapiens_ai',
       type: 'social',
       difficulty: 'low'
     },
@@ -388,7 +388,7 @@ export default function TaskCenter() {
       description: 'Comment on our latest thread about AI Accountability',
       reward: 75,
       icon: FaComment,
-      action: 'https://x.com/NeoSapiensAI',
+      action: 'https://x.com/Neosapiens_ai',
       type: 'social',
       difficulty: 'med'
     },
@@ -418,7 +418,7 @@ export default function TaskCenter() {
       description: 'Share your PoEI Score on X',
       reward: 90,
       icon: FaShare,
-      action: 'https://twitter.com/intent/tweet?text=I%20am%20aligned%20with%20@NeoSapiensAI.%20My%20Economic%20Intent%20Verified.',
+      action: 'https://twitter.com/intent/tweet?text=I%20am%20aligned%20with%20@Neosapiens_ai.%20My%20Economic%20Intent%20Verified.',
       type: 'social',
       difficulty: 'med'
     }
@@ -509,7 +509,7 @@ export default function TaskCenter() {
             address: TOKEN_CONTRACT,
             symbol: 'NEOS',
             decimals: 18,
-            image: 'https://www.neosapiens.world/token.png' 
+            image: 'https://neo-sapiens.xyz/token.png' 
           }
         }
       });
@@ -655,7 +655,10 @@ export default function TaskCenter() {
                     <div className="space-y-4">
                         <div className="p-3 bg-white/5 rounded-lg border border-white/5">
                             <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Ticker</div>
-                            <div className="text-2xl font-bold text-white tracking-tight">{TOKEN_TICKER}</div>
+                            <div className="flex items-center gap-2">
+                                <Image src="/token.png" alt="Token" width={25} height={25} className="rounded-full" />
+                                <div className="text-2xl font-bold text-white tracking-tight">{TOKEN_TICKER}</div>
+                            </div>
                             <div className="text-xs text-intent-green font-mono mt-1">BEP-20 / BSC</div>
                         </div>
                         
