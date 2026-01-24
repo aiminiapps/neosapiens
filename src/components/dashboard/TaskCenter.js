@@ -1,22 +1,32 @@
 'use client';
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaWallet, FaSpinner, FaCheckCircle,
   FaExternalLinkAlt, FaRetweet, FaComment, FaThumbsUp, FaCopy, 
-  FaInfoCircle, FaGift, FaCoins,  FaChartLine, 
+  FaInfoCircle, FaGift, FaChartLine, 
   FaFire,  FaShare, FaCheckDouble,
 } from 'react-icons/fa';
-import { RiTelegram2Line, RiTwitterXFill } from "react-icons/ri";
-import { BiCoin} from 'react-icons/bi';
-import { FiCpu, FiLayers } from 'react-icons/fi';
+import { 
+    RiTwitterXFill, 
+    RiTelegram2Line, 
+    RiCpuLine, 
+    RiDatabase2Line, 
+    RiShieldCheckLine, 
+    RiGlobalLine, 
+    RiExchangeFundsLine,
+    RiGovernmentLine,
+    RiLinksLine
+} from "react-icons/ri";
 import Image from 'next/image';
 
-// Storage Configuration
-const STORAGE_KEY = 'portly-task-center';
+// --- CONFIGURATION ---
+const STORAGE_KEY = 'neos-task-center';
 const TOKEN_CONTRACT = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS || '0x...';
+const TOKEN_TICKER = "$NEOS";
 
-// Animations
+// --- ANIMATIONS (Fixed: Added these back) ---
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -29,7 +39,25 @@ const slideIn = {
   transition: { duration: 0.5 }
 };
 
-// --- LOGIC HELPERS (Unchanged Logic) ---
+// --- STYLED COMPONENTS ---
+const TechCard = ({ children, className = "", noPadding = false }) => (
+    <div className={`relative bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-white/10 ${className}`}>
+        {/* Soft Glow */}
+        <div className="absolute -top-20 -right-20 w-32 h-32 bg-yellow-neo/5 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className={noPadding ? "" : "p-6"}>
+            {children}
+        </div>
+    </div>
+);
+
+const SectionHeader = ({ title, subtitle }) => (
+    <div className="relative mb-8 pl-4  border-yellow-neo">
+        <h2 className="text-2xl font-bold text-white  tracking-tight">{title}</h2>
+        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+    </div>
+);
+
+// --- LOGIC HELPERS ---
 const getStorage = () => {
   if (typeof window === 'undefined') return null;
   try {
@@ -102,7 +130,7 @@ const useWallet = () => {
         window.location.href = `https://metamask.app.link/dapp/${window.location.host}`;
         return;
       }
-      alert('🔥 Please install MetaMask extension to start earning POTL tokens!');
+      alert(`🔥 Please install MetaMask extension to start earning ${TOKEN_TICKER}!`);
       return;
     }
 
@@ -120,7 +148,7 @@ const useWallet = () => {
         throw new Error('No accounts found');
       }
 
-      // Switch to BSC (Keeping logic as requested)
+      // Switch to BSC
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -216,7 +244,7 @@ const useWallet = () => {
     try {
       const nonce = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const expiry = Math.floor(Date.now() / 1000) + 3600;
-      const message = `Welcome to Portly!\nAddress: ${address}\nNonce: ${nonce}\nExpiry: ${expiry}`;
+      const message = `Welcome to NEO-SAPIENS!\nAddress: ${address}\nNonce: ${nonce}\nExpiry: ${expiry}`;
 
       const signature = await signer.signMessage(message);
 
@@ -285,72 +313,42 @@ const useWallet = () => {
     });
   }, []);
 
-  // Auto-reconnect
-// ✅ CORRECTED AUTO-RECONNECT LOGIC
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
+    const reconnect = async () => {
+      try {
+        const saved = getStorage();
+        if (saved?.wallet?.isConnected && saved.wallet.address && window.ethereum) {
+          const isRecent = saved.wallet.lastConnected && (Date.now() - saved.wallet.lastConnected) < 24 * 60 * 60 * 1000;
+          if (isRecent) {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts.length > 0 && accounts[0].toLowerCase() === saved.wallet.address.toLowerCase()) {
+              const ethersModule = await import('ethers');
+              const ethers = ethersModule.default || ethersModule;
+              const provider = new ethers.BrowserProvider(window.ethereum);
+              const signer = await provider.getSigner();
+              let balance = '0';
+              try {
+                const rawBalance = await provider.getBalance(accounts[0]);
+                balance = ethers.formatEther(rawBalance);
+              } catch (err) { console.warn('Balance fetch failed:', err); }
 
-  const reconnect = async () => {
-    try {
-      const saved = getStorage();
-      
-      // Check if we have a saved connection and Ethereum is available
-      if (saved?.wallet?.isConnected && saved.wallet.address && window.ethereum) {
-        
-        // Check if the login is recent (e.g., within 24 hours)
-        const isRecent = saved.wallet.lastConnected && 
-          (Date.now() - saved.wallet.lastConnected) < 24 * 60 * 60 * 1000;
-
-        if (isRecent) {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          
-          if (accounts.length > 0 && accounts[0].toLowerCase() === saved.wallet.address.toLowerCase()) {
-            
-            // 🔧 CRITICAL FIX: Re-initialize Provider & Signer here
-            const ethersModule = await import('ethers');
-            const ethers = ethersModule.default || ethersModule;
-            
-            // Re-create provider and signer
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            
-            // Fetch fresh balance
-            let balance = '0';
-            try {
-              const rawBalance = await provider.getBalance(accounts[0]);
-              balance = ethers.formatEther(rawBalance);
-            } catch (err) {
-              console.warn('Balance fetch failed:', err);
+              if (isMounted) {
+                setWallet(prev => ({ ...prev, address: accounts[0], provider, signer, isConnected: true, balance, isInitialized: true }));
+              }
+              return;
             }
-
-            if (isMounted) {
-              setWallet(prev => ({
-                ...prev,
-                address: accounts[0],
-                provider, // ✅ Restore Provider
-                signer,   // ✅ Restore Signer (Fixes the crash)
-                isConnected: true,
-                balance,
-                isInitialized: true
-              }));
-            }
-            return;
           }
         }
+        if (isMounted) setWallet(prev => ({ ...prev, isInitialized: true }));
+      } catch (error) {
+        console.error("Auto-connect failed:", error);
+        if (isMounted) setWallet(prev => ({ ...prev, isInitialized: true }));
       }
-      
-      // If not connected or session expired
-      if (isMounted) setWallet(prev => ({ ...prev, isInitialized: true }));
-      
-    } catch (error) {
-      console.error("Auto-connect failed:", error);
-      if (isMounted) setWallet(prev => ({ ...prev, isInitialized: true }));
-    }
-  };
-
-  reconnect();
-  return () => { isMounted = false; };
-}, []);
+    };
+    reconnect();
+    return () => { isMounted = false; };
+  }, []);
 
   return { ...wallet, connectWallet, disconnect, welcomeBonusStatus };
 };
@@ -361,79 +359,76 @@ export default function TaskCenter() {
   const [tasks, setTasks] = useState({});
   const [processingTask, setProcessingTask] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [showTokenInfo, setShowTokenInfo] = useState(false);
 
-  // Task Definitions - Updated for Portly Content
+  // Updated Tasks content to match NEO-SAPIENS theme
   const taskDefinitions = useMemo(() => ({
     followX: {
       id: 'followX',
-      title: 'Follow Portly on X',
-      description: 'Follow @PortlyAI for the latest insights & updates',
+      title: 'Link with NEO-SAPIENS',
+      description: 'Follow @NeoSapiensAI for governance updates & protocols',
       reward: 100,
       icon: RiTwitterXFill,
-      action: 'https://twitter.com/intent/follow?screen_name=portlyai',
-      type: 'social',
-      difficulty: 'easy'
+      action: 'https://twitter.com/intent/follow?screen_name=NeoSapiensAI',
+      type: 'protocol',
+      difficulty: 'low'
     },
     likeX: {
       id: 'likeX',
-      title: 'Like Latest Post',
-      description: 'Engage with our latest market analysis on X',
+      title: 'Acknowledge Transmission',
+      description: 'Like the latest system update on X',
       reward: 50,
       icon: FaThumbsUp,
-      action: 'https://x.com/portlyai',
+      action: 'https://x.com/NeoSapiensAI',
       type: 'social',
-      difficulty: 'easy'
+      difficulty: 'low'
     },
     commentX: {
       id: 'commentX',
-      title: 'Join the Discussion',
-      description: 'Comment your thoughts on our latest AI feature',
+      title: 'Economic Input',
+      description: 'Comment on our latest thread about AI Accountability',
       reward: 75,
       icon: FaComment,
-      action: 'https://x.com/portlyai',
+      action: 'https://x.com/NeoSapiensAI',
       type: 'social',
-      difficulty: 'medium'
+      difficulty: 'med'
     },
     retweetX: {
       id: 'retweetX',
-      title: 'Boost the Signal',
-      description: 'Retweet our pinned post to support the ecosystem',
+      title: 'Amplify Signal',
+      description: 'Retweet the pinned operational directive',
       reward: 60,
       icon: FaRetweet,
-      action: 'https://x.com/portlyai',
+      action: 'https://x.com/NeoSapiensAI',
       type: 'social',
-      difficulty: 'easy'
+      difficulty: 'low'
     },
     joinTelegram: {
       id: 'joinTelegram',
-      title: 'Join Community',
-      description: 'Enter the Portly Traders Group on Telegram',
+      title: 'Enter Neural Network',
+      description: 'Join the NEO-SAPIENS Governance Channel',
       reward: 80,
       icon: RiTelegram2Line,
-      action: 'https://t.me/PortlyAI',
-      type: 'social',
-      difficulty: 'easy'
+      action: 'https://t.me/NeoSapiensAI',
+      type: 'protocol',
+      difficulty: 'low'
     },
     shareX: {
       id: 'shareX',
-      title: 'Invite Peers',
-      description: 'Share your Portfolio Score on X',
+      title: 'Recruit Operatives',
+      description: 'Share your PoEI Score on X',
       reward: 90,
       icon: FaShare,
-      action: 'https://twitter.com/intent/tweet?text=I%20just%20analyzed%20my%20portfolio%20with%20@PortlyAI!%20Check%20it%20out!',
+      action: 'https://twitter.com/intent/tweet?text=I%20am%20aligned%20with%20@NeoSapiensAI.%20My%20Economic%20Intent%20Verified.',
       type: 'social',
-      difficulty: 'medium'
+      difficulty: 'med'
     }
   }), []);
 
-  // Initialize tasks
   useEffect(() => {
     const saved = getStorage();
     if (saved?.tasks) setTasks(saved.tasks);
   }, []);
 
-  // Stats calculations
   const stats = useMemo(() => {
     const saved = getStorage();
     const completed = Object.values(tasks).filter(t => t.completed).length;
@@ -443,10 +438,9 @@ export default function TaskCenter() {
     return { completed, total, earned, progress };
   }, [tasks, taskDefinitions]);
 
-  // Complete Task Handler (Logic Unchanged)
   const completeTask = useCallback(async (taskId) => {
     if (!wallet.isConnected) {
-      setNotification({ type: 'error', message: 'Connect wallet to start earning POTL!' });
+      setNotification({ type: 'error', message: `Connect wallet to earn ${TOKEN_TICKER}` });
       setTimeout(() => setNotification(null), 3000);
       return;
     }
@@ -461,7 +455,7 @@ export default function TaskCenter() {
     try {
       const nonce = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const expiry = Math.floor(Date.now() / 1000) + 3600;
-      const message = `Complete task: ${taskId}\nAddress: ${wallet.address}\nReward: ${task.reward} POTL\nNonce: ${nonce}\nExpiry: ${expiry}`;
+      const message = `Complete task: ${taskId}\nAddress: ${wallet.address}\nReward: ${task.reward} ${TOKEN_TICKER}\nNonce: ${nonce}\nExpiry: ${expiry}`;
 
       const signature = await wallet.signer.signMessage(message);
 
@@ -491,7 +485,7 @@ export default function TaskCenter() {
           }
         });
 
-        setNotification({ type: 'success', message: `🎉 +${task.reward} POTL earned!`, txHash: data.txHash });
+        setNotification({ type: 'success', message: `🎉 +${task.reward} ${TOKEN_TICKER} earned!`, txHash: data.txHash });
         setTimeout(() => setNotification(null), 5000);
       } else {
         throw new Error(data.error || 'Transaction failed');
@@ -513,13 +507,13 @@ export default function TaskCenter() {
           type: 'ERC20',
           options: {
             address: TOKEN_CONTRACT,
-            symbol: 'POTL',
+            symbol: 'NEOS',
             decimals: 18,
-            image: 'https://www.portly.world/agent.png' 
+            image: 'https://www.neosapiens.world/token.png' 
           }
         }
       });
-      setNotification({ type: 'success', message: '🎉 POTL added to MetaMask!' });
+      setNotification({ type: 'success', message: `${TOKEN_TICKER} added to MetaMask!` });
     } catch (error) {
       console.error(error);
     }
@@ -534,225 +528,291 @@ export default function TaskCenter() {
   if (!wallet.isInitialized) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        {/* <FiCpu className="w-12 h-12 text-[#8B5CF6] animate-spin mb-4" /> */}
-        <Image src='/agent.png' alt='agent logo' width={60} height={60} className='animate-pulse mb-6'/>
-        <p className="text-white/60 text-sm">Initializing Neural Link...</p>
+         <div className="w-16 h-16 rounded-full bg-yellow-neo/20 flex items-center justify-center animate-pulse mb-6">
+            <RiCpuLine className="text-yellow-neo w-8 h-8" />
+         </div>
+         <p className="text-gray-500 font-mono text-sm uppercase tracking-widest">Initializing Neural Uplink...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full text-white">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#050505] py-10">
       
-      {/* --- NOTIFICATIONS --- */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 right-6 z-50 max-w-sm w-full"
-          >
-            <div className={`backdrop-blur-xl border p-4 rounded-2xl shadow-2xl flex items-center gap-3 ${
-              notification.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/30' 
-                : 'bg-red-500/10 border-red-500/30'
-            }`}>
-              <div className={`p-2 rounded-full ${notification.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                {notification.type === 'success' ? <FaCheckCircle /> : <FaInfoCircle />}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{notification.message}</p>
-                {notification.txHash && (
-                  <a href={`https://bscscan.com/tx/${notification.txHash}`} target="_blank" rel="noreferrer" className="text-xs text-[#8B5CF6] hover:underline flex items-center gap-1 mt-1">
-                    View on Explorer <FaExternalLinkAlt size={10} />
-                  </a>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Background & SVG Lines */}
+      <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+          <svg className="absolute top-0 left-0 w-full h-full opacity-20" preserveAspectRatio="none">
+              <path d="M 60 0 L 60 150 L 100 180 L 100 1000" fill="none" stroke="#FFC21A" strokeWidth="1" />
+          </svg>
+      </div>
 
-      {/* --- WELCOME BONUS MODAL --- */}
-      <AnimatePresence>
-        {wallet.welcomeBonusStatus.sending && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="bg-[#121214] border border-[#8B5CF6]/30 rounded-3xl p-8 max-w-sm w-full text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#8B5CF6]/5 animate-pulse"></div>
-              <FiCpu className="w-12 h-12 text-[#8B5CF6] mx-auto mb-4 animate-spin" />
-              <h3 className="text-xl font-bold text-white mb-2">Claiming Bonus...</h3>
-              <p className="text-white/40 text-sm">Transferring 10 POTL to your wallet.</p>
-            </div>
-          </motion.div>
-        )}
-        {wallet.welcomeBonusStatus.sent && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="bg-[#121214] border border-emerald-500/30 rounded-3xl p-8 max-w-sm w-full text-center">
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaGift className="w-8 h-8 text-emerald-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Welcome to Portly!</h3>
-              <p className="text-emerald-400 font-medium mb-4">+10 POTL Received</p>
-              <button onClick={() => window.location.reload()} className="w-full py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold transition-all">Start Earning</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8">
 
-      {/* --- HERO SECTION --- */}
-      <motion.div {...fadeIn} className="relative rounded-[2.5rem] border border-white/5 bg-[#121214]/60 backdrop-blur-xl p-8 overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#8B5CF6]/10 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#8B5CF6] flex items-center justify-center shadow-lg">
-                <FiLayers className="text-white w-5 h-5" />
-              </span>
-              Task Center
-            </h1>
-            <p className="text-white/40 max-w-md">Complete missions to earn POTL tokens and unlock premium AI features.</p>
-          </div>
-          
-          {!wallet.isConnected ? (
-            <motion.button
-              onClick={wallet.connectWallet}
-              disabled={wallet.isConnecting}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-8 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-bold shadow-[0_0_20px_rgba(139,92,246,0.4)] flex items-center gap-2 transition-all"
+        {/* --- NOTIFICATIONS --- */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="fixed top-24 right-6 z-50 max-w-sm w-full"
             >
-              {wallet.isConnecting ? <FaSpinner className="animate-spin" /> : <FaWallet />}
-              Connect Wallet
-            </motion.button>
-          ) : (
-            <div className="flex gap-4">
-               <div className="bg-[#1E1E24] border border-white/10 rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6]">
-                     <BiCoin />
-                  </div>
-                  <div>
-                     <p className="text-[10px] text-white/40 uppercase">Balance</p>
-                     <p className="text-sm font-bold text-white">{parseFloat(wallet.balance).toFixed(4)} BNB</p>
-                  </div>
-               </div>
-               <button onClick={wallet.disconnect} className="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-red-500/10 hover:text-red-400 transition-colors">
-                  <FaRetweet className="rotate-180" />
-               </button>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* --- STATS GRID --- */}
-      {wallet.isConnected && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Tasks Done', val: `${stats.completed}/${stats.total}`, icon: FaCheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { label: 'POTL Earned', val: stats.earned, icon: FaCoins, color: 'text-[#8B5CF6]', bg: 'bg-[#8B5CF6]/10' },
-            { label: 'Completion', val: `${Math.round(stats.progress)}%`, icon: FaChartLine, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-            { label: 'Streak', val: `${getStorage()?.stats?.currentStreak || 0} Days`, icon: FaFire, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-          ].map((s, i) => (
-            <motion.div key={i} {...fadeIn} transition={{ delay: i * 0.1 }} className="p-4 rounded-2xl border border-white/5 bg-[#121214]/60 backdrop-blur-xl">
-               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-3 ${s.color}`}>
-                  <s.icon />
-               </div>
-               <p className="text-2xl font-bold text-white">{s.val}</p>
-               <p className="text-xs text-white/40 uppercase tracking-wider">{s.label}</p>
+              <div className={`backdrop-blur-xl border border-white/10 p-4 rounded-xl shadow-2xl flex items-center gap-3 ${
+                notification.type === 'success' ? 'bg-intent-green/10' : 'bg-critical-red/10'
+              }`}>
+                <div className={`p-1.5 rounded-full ${notification.type === 'success' ? 'text-intent-green' : 'text-critical-red'}`}>
+                  {notification.type === 'success' ? <FaCheckCircle /> : <FaInfoCircle />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-white">{notification.message}</p>
+                  {notification.txHash && (
+                    <a href={`https://bscscan.com/tx/${notification.txHash}`} target="_blank" rel="noreferrer" className="text-[10px] text-yellow-neo hover:underline flex items-center gap-1 mt-1 font-mono uppercase">
+                      View TX <FaExternalLinkAlt size={8} />
+                    </a>
+                  )}
+                </div>
+              </div>
             </motion.div>
-          ))}
-        </div>
-      )}
+          )}
+        </AnimatePresence>
 
-      {/* --- TASKS LIST --- */}
-      {wallet.isConnected && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-           {Object.values(taskDefinitions).map((task, index) => {
-              const isCompleted = tasks[task.id]?.completed;
-              const isProcessing = processingTask === task.id;
-              
-              return (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`p-5 rounded-2xl border border-white/5 bg-[#1E1E24]/40 backdrop-blur-md relative overflow-hidden group ${isCompleted ? 'opacity-50' : ''}`}
+        {/* --- WELCOME BONUS MODAL --- */}
+        <AnimatePresence>
+          {wallet.welcomeBonusStatus.sending && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+              <div className="bg-[#121214] border border-yellow-neo/30 rounded-2xl p-8 max-w-sm w-full text-center relative">
+                {/* <RiCpuLine className="w-12 h-12 text-yellow-neo mx-auto mb-4 animate-spin" /> */}
+                <h3 className="text-xl font-bold text-white mb-2 uppercase">Syncing...</h3>
+                <p className="text-gray-500 font-mono text-xs">Allocating initial {TOKEN_TICKER} grant.</p>
+              </div>
+            </motion.div>
+          )}
+          {wallet.welcomeBonusStatus.sent && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+              <div className="bg-[#121214] border border-intent-green/30 rounded-2xl p-8 max-w-sm w-full text-center">
+                <div className="w-16 h-16 bg-intent-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaGift className="w-8 h-8 text-intent-green" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 uppercase">Access Granted</h3>
+                <p className="text-intent-green font-mono mb-6">+10 {TOKEN_TICKER} Received</p>
+                <button onClick={() => window.location.reload()} className="w-full py-3 rounded-xl bg-yellow-neo text-black font-bold uppercase tracking-wider hover:bg-white transition-all">
+                  Enter System
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* --- PAGE HEADER & WALLET --- */}
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 pb-6 border-b border-white/5">
+            <div>
+                <h1 className="sm:text-4xl text-2xl font-bold text-white mb-2 tracking-tighter">
+                    Task <span className="text-yellow-neo">Center</span>
+                </h1>
+                <p className="text-gray-500 text-sm max-w-md">
+                    Complete missions to earn NEOS tokens.
+                </p>
+            </div>
+            
+            {!wallet.isConnected ? (
+                <button
+                onClick={wallet.connectWallet}
+                disabled={wallet.isConnecting}
+                className="px-6 py-3 rounded-lg bg-yellow-neo hover:bg-white text-black font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(255,194,26,0.3)]"
                 >
-                   {/* Hover Glow */}
-                   <div className="absolute inset-0 bg-[#8B5CF6]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                   
-                   <div className="flex justify-between items-start relative z-10">
-                      <div className="flex gap-4">
-                         <div className="w-10 h-10 rounded-xl bg-[#121214] border border-white/5 flex items-center justify-center text-[#8B5CF6] shadow-inner">
-                            <task.icon size={18} />
-                         </div>
-                         <div>
-                            <h3 className="font-bold text-white text-sm">{task.title}</h3>
-                            <p className="text-xs text-white/40 max-w-[200px] mt-1">{task.description}</p>
-                            <div className="flex gap-2 mt-3">
-                               <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/30 border border-white/5 uppercase">{task.type}</span>
-                               <span className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/30 border border-white/5 uppercase">{task.difficulty}</span>
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="text-right">
-                         <p className="text-lg font-bold text-[#8B5CF6]">+{task.reward}</p>
-                         <p className="text-[10px] text-white/20 mb-3">POTL</p>
-                         
-                         {isCompleted ? (
-                            <div className="flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-emerald-500/10 px-3 py-1.5 rounded-lg">
-                               <FaCheckDouble /> Claimed
-                            </div>
-                         ) : (
-                            <motion.button
-                               onClick={() => completeTask(task.id)}
-                               disabled={isProcessing}
-                               whileHover={{ scale: 1.05 }}
-                               whileTap={{ scale: 0.95 }}
-                               className="px-4 py-1.5 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-bold shadow-lg shadow-[#8B5CF6]/20 transition-all flex items-center gap-2"
-                            >
-                               {isProcessing ? <FaSpinner className="animate-spin" /> : 'Start Task'}
-                            </motion.button>
-                         )}
-                      </div>
-                   </div>
-                </motion.div>
-              );
-           })}
-        </div>
-      )}
-
-      {/* --- IMPORT TOKEN --- */}
-      {wallet.isConnected && (
-        <div className="p-6 rounded-[2rem] border border-white/5 bg-[#121214]/60 flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6]">
-                 <FaWallet size={24} />
-              </div>
-              <div>
-                 <h3 className="font-bold text-white">Add POTL to Wallet</h3>
-                 <p className="text-xs text-white/40">View your earned tokens in MetaMask</p>
-                 <div className="flex items-center gap-2 mt-2">
-                    <code className="px-2 py-1 rounded bg-black/30 border border-white/5 text-[10px] text-white/30 font-mono">
-                       {TOKEN_CONTRACT.slice(0, 6)}...{TOKEN_CONTRACT.slice(-4)}
-                    </code>
-                    <button onClick={() => copyToClipboard(TOKEN_CONTRACT)} className="text-[#8B5CF6] hover:text-white transition-colors">
-                       <FaCopy size={12} />
+                {wallet.isConnecting ? <FaSpinner className="animate-spin" /> : <FaWallet />}
+                Link Wallet
+                </button>
+            ) : (
+                <div className="flex gap-3">
+                    <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg flex items-center gap-3">
+                        <div className="text-right">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Balance</p>
+                            <p className="text-sm font-bold text-white font-mono">{parseFloat(wallet.balance).toFixed(4)} BNB</p>
+                        </div>
+                    </div>
+                    <button onClick={wallet.disconnect} className="p-3 rounded-lg bg-white/5 border border-white/10 hover:border-critical-red hover:text-critical-red transition-all">
+                        <FaExternalLinkAlt className="rotate-180" />
                     </button>
-                 </div>
-              </div>
-           </div>
-           <button 
-             onClick={addTokenToMetaMask}
-             className="px-6 py-3 rounded-xl border border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6] hover:text-white transition-all font-bold text-sm flex items-center gap-2"
-           >
-              <FaWallet /> Add to MetaMask
-           </button>
+                </div>
+            )}
         </div>
-      )}
 
+        {/* --- MAIN GRID LAYOUT --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* LEFT COLUMN: TOKENOMICS INTEL */}
+            <div className="lg:col-span-1 space-y-6">
+                
+                {/* Token Info Card */}
+                <TechCard>
+                    <div className="flex items-center gap-2 mb-4">
+                        <RiDatabase2Line className="text-yellow-neo" size={20} />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Asset Data</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <div className="p-3 bg-white/5 rounded-lg border border-white/5">
+                            <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Ticker</div>
+                            <div className="text-2xl font-bold text-white tracking-tight">{TOKEN_TICKER}</div>
+                            <div className="text-xs text-intent-green font-mono mt-1">BEP-20 / BSC</div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-xs border-b border-white/5 pb-2">
+                                <span className="text-gray-500">Total Supply</span>
+                                <span className="text-white font-mono">10,000,000,000</span>
+                            </div>
+                            <div className="flex justify-between text-xs border-b border-white/5 pb-2">
+                                <span className="text-gray-500">TGE Circulation</span>
+                                <span className="text-white font-mono">12.6%</span>
+                            </div>
+                            <div className="flex justify-between text-xs pb-1">
+                                <span className="text-gray-500">Minting</span>
+                                <span className="text-critical-red font-mono uppercase">Disabled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Import Button */}
+                    {wallet.isConnected && (
+                        <button 
+                            onClick={addTokenToMetaMask}
+                            className="w-full mt-4 py-2 border border-white/10 hover:border-yellow-neo/50 text-gray-400 hover:text-yellow-neo rounded-lg text-xs font-bold uppercase transition-all flex items-center justify-center gap-2"
+                        >
+                            <FaWallet /> Add to Wallet
+                        </button>
+                    )}
+                </TechCard>
+
+                {/* Economic Constraints Info */}
+                <TechCard>
+                    <div className="flex items-center gap-2 mb-4">
+                        <RiGovernmentLine className="text-blue-500" size={20} />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Utility</h3>
+                    </div>
+                    <ul className="space-y-3">
+                        <li className="flex gap-3 text-xs text-gray-400 leading-relaxed">
+                            <RiCpuLine className="text-yellow-neo flex-shrink-0 mt-0.5" />
+                            <span><strong className="text-white">Agent Budget:</strong> Funding operational costs for NEO Units based on performance.</span>
+                        </li>
+                        <li className="flex gap-3 text-xs text-gray-400 leading-relaxed">
+                            <RiExchangeFundsLine className="text-intent-green flex-shrink-0 mt-0.5" />
+                            <span><strong className="text-white">PoEI Rewards:</strong> Distributed based on measurable economic behavior verification.</span>
+                        </li>
+                        <li className="flex gap-3 text-xs text-gray-400 leading-relaxed">
+                            <RiShieldCheckLine className="text-purple-500 flex-shrink-0 mt-0.5" />
+                            <span><strong className="text-white">Governance:</strong> Voting on risk limits and system parameters.</span>
+                        </li>
+                    </ul>
+                </TechCard>
+
+            </div>
+
+            {/* RIGHT COLUMN: TASKS & STATS */}
+            <div className="lg:col-span-2 space-y-8">
+                
+                {/* Stats Row */}
+                {wallet.isConnected && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                            { label: 'Directives', val: `${stats.completed}/${stats.total}`, icon: FaCheckCircle, color: 'text-intent-green', bg: 'bg-intent-green/10' },
+                            { label: 'NEOS Earned', val: stats.earned, icon: RiExchangeFundsLine, color: 'text-yellow-neo', bg: 'bg-yellow-neo/10' },
+                            { label: 'Progress', val: `${Math.round(stats.progress)}%`, icon: FaChartLine, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                            { label: 'Streak', val: `${getStorage()?.stats?.currentStreak || 0} Days`, icon: FaFire, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+                        ].map((s, i) => (
+                            <motion.div key={i} {...fadeIn} transition={{ delay: i * 0.1 }} className={`p-4 rounded-xl border border-white/5 bg-[#121214]/60 backdrop-blur-sm ${s.bg}`}>
+                                <div className={`w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center mb-2 ${s.color}`}>
+                                    <s.icon />
+                                </div>
+                                <div className="text-2xl font-bold text-white font-mono">{s.val}</div>
+                                <div className="text-[10px] text-white/50 uppercase tracking-wider font-bold">{s.label}</div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Tasks List */}
+                <SectionHeader title="Active Directives" subtitle="Complete to increase allocation" />
+                
+                <div className="space-y-4">
+                    {wallet.isConnected ? (
+                        Object.values(taskDefinitions).map((task, index) => {
+                            const isCompleted = tasks[task.id]?.completed;
+                            const isProcessing = processingTask === task.id;
+                            
+                            return (
+                                <motion.div
+                                    key={task.id}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className={`relative group overflow-hidden p-5 rounded-xl border transition-all duration-300 ${
+                                        isCompleted 
+                                            ? 'bg-black/40 border-white/5 opacity-60' 
+                                            : 'bg-[#0f0f0f] border-white/10 hover:border-yellow-neo/50 hover:bg-[#151515]'
+                                    }`}
+                                >
+                                    {/* Task Status Indicator Line */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 transition-colors ${isCompleted ? 'bg-intent-green' : 'bg-yellow-neo'}`} />
+
+                                    <div className="flex justify-between items-center relative z-10">
+                                        <div className="flex gap-4 items-center">
+                                            <div className={`w-12 h-12 rounded-lg sm:flex hidden items-center justify-center text-xl shadow-lg ${
+                                                isCompleted ? 'bg-intent-green/10 text-intent-green' : 'bg-white/5 text-gray-300'
+                                            }`}>
+                                                <task.icon />
+                                            </div>
+                                            <div>
+                                                <h3 className={`font-semibold text-sm ${isCompleted ? 'text-gray-400' : 'text-white'}`}>
+                                                    {task.title}
+                                                </h3>
+                                                <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
+                                                <div className="flex gap-2 mt-2">
+                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5 uppercase font-bold">{task.type}</span>
+                                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 border border-white/5 uppercase font-bold">{task.difficulty}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-right flex flex-col items-end gap-2">
+                                            <div>
+                                                <span className="text-lg font-bold text-yellow-neo font-mono">+{task.reward}</span>
+                                                <span className="text-[10px] text-gray-500 ml-1 font-bold">{TOKEN_TICKER}</span>
+                                            </div>
+                                            
+                                            {isCompleted ? (
+                                                <div className="flex items-center gap-1 text-[10px] font-bold text-intent-green bg-intent-green/10 px-2 py-1 rounded uppercase tracking-wider">
+                                                    <FaCheckDouble /> Verified
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => completeTask(task.id)}
+                                                    disabled={isProcessing}
+                                                    className="px-4 py-1.5 rounded bg-white/10 hover:bg-yellow-neo hover:text-black text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 group-hover:shadow-[0_0_15px_rgba(255,194,26,0.3)]"
+                                                >
+                                                    {isProcessing ? <FaSpinner className="animate-spin" /> : 'Execute'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })
+                    ) : (
+                        <div className="p-8 rounded-xl border border-dashed border-white/10 text-center bg-white/[0.02]">
+                            <RiLinksLine className="mx-auto text-gray-600 mb-3" size={32} />
+                            <p className="text-gray-500 text-sm font-mono">Uplink required to view directives.</p>
+                            <p className="text-gray-600 text-xs mt-1">Connect wallet to initialize.</p>
+                        </div>
+                    )}
+                </div>
+
+            </div>
+        </div>
+
+      </div>
     </div>
   );
 }

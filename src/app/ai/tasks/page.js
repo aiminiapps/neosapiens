@@ -28,7 +28,7 @@ const SectionHeader = ({ title, subtitle }) => (
 
 export default function AgentsPage() {
     return (
-        <div className="relative min-h-screen py-10 w-full overflow-hidden bg-[#050505]">
+        <div className="relative min-h-screen w-full overflow-hidden bg-[#050505]">
             
             {/* --- BACKGROUND LAYER --- */}
             <div className="absolute inset-0 pointer-events-none">
@@ -70,12 +70,12 @@ export default function AgentsPage() {
             </div>
 
             {/* --- CONTENT LAYER --- */}
-            <div className="relative z-10 container mx-auto px-4 md:px-12 py-10 max-w-7xl">
+            <div className="relative z-10 container mx-auto md:px-12 py-10 max-w-7xl">
                 
-                <SectionHeader 
+                {/* <SectionHeader 
                     title={<span>Task <span className="text-yellow-neo">Center</span></span>}
                     subtitle="Complete missions to earn NEOS tokens"
-                />
+                /> */}
 
                 <div className="pl-2 md:pl-8 border-l border-white/5">
                     <TaskCenter/>
