@@ -32,7 +32,7 @@ const TechCard = ({ children, className = "", noPadding = false }) => (
     <div className={`relative bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:border-white/10 ${className}`}>
         {/* Soft Glow */}
         <div className="absolute -top-20 -right-20 w-32 h-32 bg-yellow-neo/5 rounded-full blur-3xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <div className={noPadding ? "" : "p-6"}>
+        <div className={noPadding ? "" : "p-5"}>
             {children}
         </div>
     </div>
@@ -258,7 +258,7 @@ function AgentDetailView({ agent }) {
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex gap-5">
                             <div 
-                                className="w-20 h-20 rounded-2xl flex items-center justify-center border-2 shadow-2xl"
+                                className="w-20 h-20 sm:flex hidden rounded-2xl items-center justify-center border-2 shadow-2xl"
                                 style={{ 
                                     backgroundColor: `${agent.color}10`, 
                                     borderColor: agent.color,
@@ -270,7 +270,7 @@ function AgentDetailView({ agent }) {
                             <div>
                                 <h2 className="text-2xl font-bold text-white tracking-tight mb-1">{agent.name}</h2>
                                 <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-xs font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">
+                                    <span className="sm:text-xs text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase">
                                         {agent.role}
                                     </span>
                                     <span className="flex items-center gap-1 text-[10px] text-intent-green font-bold uppercase bg-intent-green/10 px-2 py-0.5 rounded border border-intent-green/20">
@@ -297,7 +297,7 @@ function AgentDetailView({ agent }) {
                         </div>
                         <div className="text-right px-4 border-l border-white/5">
                             <div className="text-[10px] text-gray-500 uppercase font-bold">Balance</div>
-                            <div className="text-sm font-bold text-white">{parseFloat(agent.balance).toFixed(4)} ETH</div>
+                            <div className="sm:text-sm text-[10px] font-bold text-white">{parseFloat(agent.balance).toFixed(4)} ETH</div>
                         </div>
                         <a
                             href={`https://etherscan.io/address/${agent.wallet}`}
@@ -363,7 +363,7 @@ function AgentDetailView({ agent }) {
 
 function MetricBox({ icon: Icon, label, value, trend }) {
     return (
-        <TechCard className="p-4 flex flex-col justify-between h-24">
+        <TechCard className="flex flex-col justify-between h-24">
             <div className="flex justify-between items-start">
                 <Icon className="text-gray-500" size={16} />
                 {trend === 'up' && <RiArrowUpLine className="text-intent-green" size={14} />}
