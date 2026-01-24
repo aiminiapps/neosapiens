@@ -73,8 +73,8 @@ export default function AgentsPage() {
             <div className="relative z-10 container mx-auto px-4 md:px-12 py-10 max-w-7xl">
                 
                 <SectionHeader 
-                    title={<span>AI <span className="text-yellow-neo">Agents</span></span>}
-                    subtitle="Active Units"
+                    title={<span>Task <span className="text-yellow-neo">Center</span></span>}
+                    subtitle="Complete missions to earn NEOS tokens"
                 />
 
                 <div className="pl-2 md:pl-8 border-l border-white/5">
