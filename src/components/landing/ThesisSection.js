@@ -6,10 +6,9 @@ import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-mot
 export default function TheIdeaSection() {
     return (
         <section className="relative w-full h-fit bg-black py-32 flex items-center justify-center overflow-hidden">
-            {/* Cinematic Grain (Subtle Texture) */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_90%)] pointer-events-none z-[1]" />
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none z-[0]" 
-                 style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_90%)] pointer-events-none z-[1]" />
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                 style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px' }} 
             />
 
             <div className="container mx-auto px-6 md:px-12 relative z-10">
