@@ -3,95 +3,77 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import * as THREE from 'three';
-import { 
-    RiArrowRightLine, 
-    RiCpuLine, 
-    RiShieldCheckLine, 
-    RiFocus3Line,
-    RiGlobalLine 
-} from 'react-icons/ri';
+import { RiArrowRightLine, RiFocus3Line, RiGlobalLine, RiCpuLine } from 'react-icons/ri';
 
-// --- 1. THREE.JS BACKGROUND (Optimized & Parallax) ---
-const NeuralCore = ({ mouseX, mouseY }) => {
+// --- 1. THREE.JS: INFINITE VELOCITY GRID (The Flight Feel) ---
+const AvionicsBackground = ({ mouseX, mouseY }) => {
     const mountRef = useRef(null);
 
     useEffect(() => {
         if (!mountRef.current) return;
 
-        // Scene
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.003); // Deeper fog for depth
+        scene.fog = new THREE.FogExp2(0x000000, 0.0015); // Deep luxury fog
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 18;
+        const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3, 30); // Pilot's eye view
+        camera.lookAt(0, 0, -50);
 
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         mountRef.current.appendChild(renderer.domElement);
 
-        // --- PARTICLES (Premium: Fewer, Smaller, Shinier) ---
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 450; // Reduced for premium minimalism
-        const posArray = new Float32Array(particlesCount * 3);
+        // --- GRID TERRAIN ---
+        // We create two grids to simulate infinite movement by looping them
+        const gridHelper = new THREE.GridHelper(200, 80, 0x333333, 0x111111);
+        gridHelper.position.y = -5;
+        gridHelper.scale.z = 2; // Stretch for speed illusion
+        scene.add(gridHelper);
 
-        for (let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 35; // Spread out more
+        const gridHelper2 = new THREE.GridHelper(200, 80, 0x333333, 0x111111);
+        gridHelper2.position.y = -5;
+        gridHelper2.position.z = -200; // Place behind the first
+        gridHelper2.scale.z = 2;
+        scene.add(gridHelper2);
+
+        // --- CEILING LIGHTS (Runway Lights) ---
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        for (let i = 0; i < 40; i++) {
+            vertices.push((Math.random() - 0.5) * 100, (Math.random()) * 20 + 10, (Math.random()) * -100);
         }
-
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-        // Custom Shader Material for "Shiny" Gold look
-        const material = new THREE.PointsMaterial({
-            size: 0.04, // Very fine size
-            color: 0xFFD700, // Pure Gold
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending,
-            sizeAttenuation: true
-        });
-
-        const particlesMesh = new THREE.Points(particlesGeometry, material);
-        scene.add(particlesMesh);
-
-        // --- CONNECTING LINES (Subtle Structure) ---
-        const geometryWire = new THREE.IcosahedronGeometry(12, 1);
-        const materialWire = new THREE.MeshBasicMaterial({ 
-            color: 0x444444, 
-            wireframe: true, 
-            transparent: true, 
-            opacity: 0.03 // Barely visible structure
-        });
-        const wireSphere = new THREE.Mesh(geometryWire, materialWire);
-        scene.add(wireSphere);
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        const material = new THREE.PointsMaterial({ color: 0xffffff, size: 0.2, transparent: true, opacity: 0.6 });
+        const stars = new THREE.Points(geometry, material);
+        scene.add(stars);
 
         // Animation Loop
-        let targetX = 0;
-        let targetY = 0;
-
         const animate = () => {
             requestAnimationFrame(animate);
 
-            // Constant gentle rotation
-            particlesMesh.rotation.y += 0.0008;
-            wireSphere.rotation.y -= 0.0005;
+            // Infinite Floor Logic
+            const speed = 0.4;
+            gridHelper.position.z += speed;
+            gridHelper2.position.z += speed;
+            stars.position.z += speed;
 
-            // Parallax Smoothing (Lerp)
-            targetX = mouseX.get() * 0.001;
-            targetY = mouseY.get() * 0.001;
+            if (gridHelper.position.z >= 200) gridHelper.position.z = -200;
+            if (gridHelper2.position.z >= 200) gridHelper2.position.z = -200;
+            if (stars.position.z >= 50) stars.position.z = -100;
 
-            camera.position.x += (targetX - camera.position.x) * 0.05;
-            camera.position.y += (-targetY - camera.position.y) * 0.05;
-            camera.lookAt(scene.position);
+            // Pilot Head Movement (Parallax)
+            const rotX = mouseY.get() * 0.0002;
+            const rotY = mouseX.get() * 0.0002;
+            
+            camera.rotation.x = -0.1 + rotX; // Slight tilt down
+            camera.rotation.y = rotY;
 
             renderer.render(scene, camera);
         };
-
         animate();
 
-        // Resize
         const handleResize = () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -101,235 +83,239 @@ const NeuralCore = ({ mouseX, mouseY }) => {
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            if (mountRef.current && renderer.domElement) {
-                mountRef.current.removeChild(renderer.domElement);
-            }
-            particlesGeometry.dispose();
-            material.dispose();
-            renderer.dispose();
+            if(mountRef.current) mountRef.current.innerHTML = '';
         };
     }, [mouseX, mouseY]);
 
     return <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-none" />;
 };
 
-// --- 2. MAIN HERO COMPONENT ---
+// --- 2. HUD COMPONENTS (Animated Vectors) ---
 
-export default function HeroSection() {
-    // Mouse Motion State for Parallax
+const Reticle = () => (
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none opacity-20">
+        <svg viewBox="0 0 100 100" className="w-full h-full animate-spin-slow-reverse">
+            <circle cx="50" cy="50" r="48" stroke="white" strokeWidth="0.1" fill="none" strokeDasharray="1 2" />
+            <circle cx="50" cy="50" r="30" stroke="white" strokeWidth="0.1" fill="none" />
+            <path d="M50,2 L50,10 M50,90 L50,98 M2,50 L10,50 M90,50 L98,50" stroke="white" strokeWidth="0.5" />
+        </svg>
+    </div>
+);
+
+const CompassTape = ({ mouseX }) => {
+    const x = useTransform(mouseX, [-1000, 1000], [-50, 50]);
+    return (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 w-96 h-12 overflow-hidden border-b border-white/20 mask-linear-fade">
+            <motion.div style={{ x }} className="flex gap-8 justify-center items-end h-full pb-1 text-xs text-white/50 font-mono">
+                <span>330</span><span>|</span><span>340</span><span>|</span>
+                <span className="text-white font-bold text-sm">N</span>
+                <span>|</span><span>010</span><span>|</span><span>020</span>
+                <span>|</span><span>030</span><span>|</span><span>040</span>
+            </motion.div>
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-white" />
+        </div>
+    );
+};
+
+const Altimeter = () => (
+    <div className="absolute right-8 top-1/3 bottom-1/3 w-16 border-l border-white/20 flex flex-col justify-between items-start pl-2 py-4 mask-vertical-fade">
+        {[...Array(10)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2 w-full opacity-50">
+                <div className="w-2 h-px bg-white" />
+                <span className="text-[10px] font-mono text-white/70">{(2000 + (i * 100))}</span>
+            </div>
+        ))}
+        {/* Active Indicator */}
+        <div className="absolute top-1/2 -translate-y-1/2 -left-[5px] flex items-center gap-2">
+            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[8px] border-l-white" />
+            <div className="px-2 py-1 bg-white/10 backdrop-blur text-xs font-bold font-mono text-white border border-white/20">2,500</div>
+        </div>
+    </div>
+);
+
+const Speedometer = () => (
+    <div className="absolute left-8 top-1/3 bottom-1/3 w-16 border-r border-white/20 flex flex-col justify-between items-end pr-2 py-4 mask-vertical-fade">
+        {[...Array(10)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2 w-full justify-end opacity-50">
+                <span className="text-[10px] font-mono text-white/70">{(400 + (i * 10))}</span>
+                <div className="w-2 h-px bg-white" />
+            </div>
+        ))}
+        {/* Active Indicator */}
+        <div className="absolute top-1/2 -translate-y-1/2 -right-[5px] flex flex-row-reverse items-center gap-2">
+            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[8px] border-r-white" />
+            <div className="px-2 py-1 bg-white/10 backdrop-blur text-xs font-bold font-mono text-white border border-white/20">450</div>
+        </div>
+    </div>
+);
+
+// --- 3. THE "ARM & LAUNCH" BUTTON ---
+const LaunchButton = () => {
+    return (
+        <Link href="/dashboard" className="group relative inline-flex items-center justify-center">
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            {/* Main Chassis */}
+            <div className="relative z-10 h-14 pl-8 pr-2 bg-black/40 backdrop-blur-md border border-white/20 flex items-center gap-6 overflow-hidden transition-all duration-300 group-hover:border-cyan-400/50">
+                
+                {/* Diagonal Stripe (Hazard Style) */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-transparent via-cyan-400 to-transparent opacity-50" />
+                
+                {/* Text Block */}
+                <div className="flex flex-col items-start">
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-cyan-400 group-hover:text-white transition-colors">
+                        Ready to engage
+                    </span>
+                    <span className="text-base font-bold text-white tracking-widest uppercase">
+                        Initialize System
+                    </span>
+                </div>
+
+                {/* The "Switch" */}
+                <div className="relative h-10 w-12 bg-white/5 border-l border-white/10 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-black transition-all duration-300">
+                    <RiArrowRightLine className="w-5 h-5 -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
+                </div>
+            </div>
+
+            {/* Corner Markers */}
+            <div className="absolute -top-1 -left-1 w-3 h-3 border-t border-l border-cyan-500 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-cyan-500 opacity-0 group-hover:opacity-100 transition-all duration-300" />
+        </Link>
+    );
+};
+
+// --- 4. MAIN HERO COMPONENT ---
+export default function LuxuryCockpitHero() {
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
-    
-    // Smooth Spring for Image Parallax
-    const springConfig = { damping: 25, stiffness: 150 };
-    const imgX = useSpring(useTransform(mouseX, [-1000, 1000], [-15, 15]), springConfig);
-    const imgY = useSpring(useTransform(mouseY, [-1000, 1000], [-15, 15]), springConfig);
 
     const handleMouseMove = (e) => {
         const { clientX, clientY } = e;
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        mouseX.set(clientX - centerX);
-        mouseY.set(clientY - centerY);
+        // Normalize coordinates for camera rotation
+        mouseX.set(clientX - window.innerWidth / 2);
+        mouseY.set(clientY - window.innerHeight / 2);
     };
 
     return (
         <section 
-            className="relative w-full h-screen min-h-[800px] bg-[#050505] overflow-hidden flex flex-col justify-center"
+            className="relative w-full h-screen bg-[#000000] overflow-hidden flex flex-col items-center justify-center text-center selection:bg-cyan-500/30"
             onMouseMove={handleMouseMove}
         >
-            
-            {/* A. CINEMATIC NOISE FILTER (Fine Grain) */}
-            <div className="absolute inset-0 opacity-[0.04] pointer-events-none z-[1]" 
-                 style={{ 
-                     backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` 
-                 }} 
-            />
+            {/* A. THREE.JS ENVIRONMENT */}
+            <AvionicsBackground mouseX={mouseX} mouseY={mouseY} />
 
-            {/* B. THREE.JS BACKGROUND */}
-            <NeuralCore mouseX={mouseX} mouseY={mouseY} />
+            {/* B. VIGNETTE & SCANLINES (The "Screen" Feel) */}
+            <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,#000000_120%)]" />
+            <div className="absolute inset-0 z-[1] pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
-            {/* C. "COMMAND DECK" HUD OVERLAY (The Cockpit) */}
-            <div className="absolute inset-0 pointer-events-none z-[2]">
-                <svg className="w-full h-full" preserveAspectRatio="none">
-                    {/* --- Top HUD --- */}
-                    {/* Center Notch */}
-                    <path d="M400,0 L420,20 L500,20 L580,20 L600,0" fill="#0a0a0a" stroke="#FFC21A" strokeWidth="1" />
-                    {/* Top Lines */}
-                    <path d="M0,40 L350,40 L380,10 L1000,10" stroke="white" strokeWidth="1" strokeOpacity="0.1" fill="none" />
-                    <rect x="45%" y="25" width="10%" height="2" fill="#FFC21A" opacity="0.5" />
-
-                    {/* --- Bottom HUD --- */}
-                    <path d="M0,1000 L200,1000 L250,960 L800,960 L850,1000 L1200,1000" stroke="#FFC21A" strokeWidth="1" strokeOpacity="0.3" fill="none" />
-                    {/* Bottom Ticks */}
-                    <path d="M100,960 L100,970" stroke="white" strokeOpacity="0.2" />
-                    <path d="M120,960 L120,970" stroke="white" strokeOpacity="0.2" />
-                    <path d="M140,960 L140,970" stroke="white" strokeOpacity="0.2" />
-
-                    {/* --- Left Side Bracket --- */}
-                    <path d="M40,200 L20,220 L20,780 L40,800" stroke="#FFC21A" strokeWidth="1" strokeOpacity="0.4" fill="none" />
-                    <rect x="15" y="48%" width="2" height="4%" fill="#FFC21A" />
-
-                    {/* --- Right Side Bracket --- */}
-                    <path d="M1000,200 L1000,780" transform="translate(-40, 0)" stroke="#FFC21A" strokeWidth="1" strokeOpacity="0.4" fill="none" />
-                    {/* Right Data Readout Decoration */}
-                    <path d="M960,300 L940,300" stroke="white" strokeOpacity="0.2" />
-                    <path d="M960,310 L940,310" stroke="white" strokeOpacity="0.2" />
-                    <path d="M960,320 L940,320" stroke="white" strokeOpacity="0.2" />
-                </svg>
+            {/* C. HUD UI LAYER */}
+            <div className="absolute inset-0 z-[10] pointer-events-none hidden md:block">
+                <CompassTape mouseX={mouseX} />
+                <Altimeter />
+                <Speedometer />
+                <Reticle />
                 
-                {/* Vertical Scanning Line (Cockpit Scan) */}
-                <div className="absolute left-[5%] top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-yellow-neo/20 to-transparent overflow-hidden">
-                    <div className="absolute top-0 w-full h-40 bg-yellow-neo/40 blur-sm animate-scan-slow" />
+                {/* Corner Status Data */}
+                <div className="absolute top-8 left-8 flex flex-col gap-1 text-left">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] font-mono text-white/60 tracking-widest uppercase">Sys_Online</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/30 tracking-widest">G4-99X PROTOCOL</span>
+                </div>
+
+                <div className="absolute bottom-8 right-8 text-right">
+                    <div className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase mb-1">Target Lock</div>
+                    <div className="text-xl font-mono text-white tracking-widest">100%</div>
                 </div>
             </div>
 
-            {/* D. CONTENT CONTAINER */}
-            <div className="relative z-10 container mx-auto px-8 md:px-16 h-full flex flex-col justify-center">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+            {/* D. MAIN CONTENT (Center Stage) */}
+            <div className="relative z-20 max-w-4xl px-6 flex flex-col items-center gap-10">
+                
+                {/* Top Badge */}
+                <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="flex items-center gap-3 px-4 py-2 border border-white/10 bg-white/5 backdrop-blur-md rounded-full"
+                >
+                    <RiGlobalLine className="text-cyan-400" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-white/80">Autonomous Network V.2.0</span>
+                </motion.div>
+
+                {/* Hero Title */}
+                <div className="relative">
+                    <motion.h1 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                        className="text-5xl md:text-7xl lg:text-8xl font-medium text-white tracking-tight leading-[1.1]"
+                    >
+                        Command the <br />
+                        <span className="font-light text-white/50">digital future.</span>
+                    </motion.h1>
                     
-                    {/* LEFT CONTENT */}
-                    <div className="lg:col-span-7 space-y-8">
-                        
-                        {/* Status Line */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: -30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className="flex items-center gap-4"
-                        >
-                            <div className="flex items-center gap-2 px-3 py-1 bg-yellow-neo/10 border border-yellow-neo/30 rounded text-[10px] font-bold text-yellow-neo uppercase tracking-widest">
-                                <RiGlobalLine /> System Online
-                            </div>
-                            <div className="h-px w-20 bg-gradient-to-r from-yellow-neo/50 to-transparent" />
-                        </motion.div>
-
-                        {/* Title */}
-                        <motion.h1 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2 }}
-                            className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-[0.95] tracking-tighter"
-                        >
-                            THE BRAIN <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-neo via-[#FFD700] to-white opacity-90">
-                                OF BLOCKCHAIN
-                            </span>
-                        </motion.h1>
-
-                        {/* Description (Creative & Simple) */}
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.8, delay: 0.4 }}
-                            className="text-lg text-gray-400 font-light max-w-xl leading-relaxed border-l-2 border-white/10 pl-6"
-                        >
-                            We don't just build chatbots. We build <strong>autonomous agents</strong> that 
-                            understand money. They analyze markets, execute trades, and prove their 
-                            economic intent on-chain.
-                        </motion.p>
-
-                        {/* CTAs */}
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                            className="flex flex-wrap gap-5 pt-4"
-                        >
-                            <Link href="/dashboard">
-                                <button className="relative px-8 py-4 bg-yellow-neo text-black font-bold uppercase tracking-widest text-xs rounded hover:bg-white transition-all shadow-[0_0_30px_rgba(255,194,26,0.3)] flex items-center gap-3 overflow-hidden group">
-                                    <span className="relative z-10">Access Terminal</span>
-                                    <RiArrowRightLine className="relative z-10 transition-transform group-hover:translate-x-1" />
-                                    {/* Button Glint */}
-                                    <div className="absolute inset-0 bg-white/40 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-                                </button>
-                            </Link>
-                            
-                            <Link href="/whitepaper">
-                                <button className="px-8 py-4 bg-transparent border border-white/20 text-white font-bold uppercase tracking-widest text-xs rounded hover:bg-white/5 hover:border-white/50 transition-all flex items-center gap-2">
-                                    System Specs
-                                </button>
-                            </Link>
-                        </motion.div>
-
-                        {/* Metrics Bar */}
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 1, delay: 0.8 }}
-                            className="flex items-center gap-8 pt-8 border-t border-white/5"
-                        >
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Agents Active</span>
-                                <span className="text-xl font-mono text-white">12,402</span>
-                            </div>
-                            <div className="w-px h-8 bg-white/10" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Verified Volume</span>
-                                <span className="text-xl font-mono text-intent-green">$42.8M</span>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    {/* RIGHT VISUAL: Token & Parallax */}
-                    <div className="lg:col-span-5 relative h-full flex items-center justify-center">
-                        <motion.div 
-                            style={{ x: imgX, y: imgY }}
-                            className="relative z-20"
-                        >
-                            {/* The Floating Token */}
-                            <div className="relative w-[350px] md:w-[500px] aspect-square animate-float-premium">
-                                <Image 
-                                    src="/token.png" 
-                                    alt="NEOS Token" 
-                                    fill
-                                    className="object-contain drop-shadow-[0_30px_80px_rgba(255,194,26,0.25)]"
-                                    priority
-                                />
-                                
-                                {/* Orbital Tech Rings (CSS) */}
-                                <div className="absolute inset-[-10%] border border-white/5 rounded-full animate-[spin_30s_linear_infinite]" />
-                                <div className="absolute inset-[5%] border border-yellow-neo/20 rounded-full border-dashed animate-[spin_20s_linear_infinite_reverse]" />
-                            </div>
-
-                            {/* Floating Glass Data Card */}
-                            <motion.div 
-                                animate={{ y: [0, -10, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                                className="absolute -bottom-12 -right-8 p-5 bg-[#0a0a0a]/80 backdrop-blur-xl border border-yellow-neo/30 rounded-lg shadow-2xl flex items-center gap-4"
-                            >
-                                <div className="w-10 h-10 rounded bg-yellow-neo/10 flex items-center justify-center text-yellow-neo border border-yellow-neo/20">
-                                    <RiCpuLine size={20} />
-                                </div>
-                                <div>
-                                    <div className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Current Efficiency</div>
-                                    <div className="text-sm font-mono font-bold text-white">99.8% <span className="text-intent-green ml-1">OPTIMAL</span></div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </div>
-
+                    {/* Decorative Title Scanline */}
+                    <motion.div 
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ duration: 1.5, delay: 0.5 }}
+                        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent" 
+                    />
                 </div>
+
+                {/* Description */}
+                <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1, delay: 0.3 }}
+                    className="max-w-xl text-lg text-white/60 font-light leading-relaxed"
+                >
+                    Deploy intelligent agents that navigate the blockchain economy with pilot-like precision. <span className="text-white">Full autonomy. Zero latency.</span>
+                </motion.p>
+
+                {/* CTA System */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    className="pt-4"
+                >
+                    <LaunchButton />
+                </motion.div>
+
+                {/* Footer Data Grid (Mobile Only - simplified) */}
+                <div className="md:hidden pt-12 grid grid-cols-2 gap-8 w-full border-t border-white/10 mt-8">
+                    <div className="text-center">
+                        <div className="text-xs text-white/40 mb-1">VELOCITY</div>
+                        <div className="text-lg text-white font-mono">12.4k</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-xs text-white/40 mb-1">ALTITUDE</div>
+                        <div className="text-lg text-white font-mono">45.2M</div>
+                    </div>
+                </div>
+
             </div>
 
-            {/* CSS Global Animations */}
+            {/* GLOBAL ANIMATION STYLES */}
             <style jsx global>{`
-                @keyframes scan-slow {
-                    0% { top: -20%; opacity: 0; }
-                    20% { opacity: 1; }
-                    80% { opacity: 1; }
-                    100% { top: 120%; opacity: 0; }
+                .mask-linear-fade {
+                    mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+                    -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
                 }
-                .animate-scan-slow {
-                    animation: scan-slow 8s linear infinite;
+                .mask-vertical-fade {
+                    mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+                    -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
                 }
-                .animate-float-premium {
-                    animation: floatPremium 8s ease-in-out infinite;
+                @keyframes spin-slow-reverse {
+                    from { transform: rotate(360deg); }
+                    to { transform: rotate(0deg); }
                 }
-                @keyframes floatPremium {
-                    0% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-25px) rotate(1deg); }
-                    100% { transform: translateY(0px) rotate(0deg); }
+                .animate-spin-slow-reverse {
+                    animation: spin-slow-reverse 60s linear infinite;
                 }
             `}</style>
         </section>
