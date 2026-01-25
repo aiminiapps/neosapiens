@@ -4,6 +4,7 @@ import ThesisSection from "@/components/landing/ThesisSection";
 import AIAgentsSection from "@/components/landing/AIAgentsSection";
 import TransparencySection from "@/components/landing/TransparencySection";
 import CTASection from "@/components/landing/CTASection";
+import Footer from "@/components/landing/Footer";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <AIAgentsSection />
       <TransparencySection />
       <CTASection />
+      <Footer />
     </main>
   );
 }
