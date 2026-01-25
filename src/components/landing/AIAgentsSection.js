@@ -139,7 +139,7 @@ export default function NeoUnitsSection() {
                             className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight"
                         >
                             Meet the 
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-yellow-200"> NEO Units.</span>
+                            <span className="text-transparent pt-2 bg-clip-text bg-gradient-to-r from-[#FFD700] via-yellow-100 to-[#FFD700] drop-shadow-[0_0_25px_rgba(255,215,0,0.3)]"> NEO Units.</span>
                         </motion.h2>
 
                         <motion.p 
