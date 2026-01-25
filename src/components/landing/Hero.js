@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useTransform, useSpring, useMotionValue, useTime } from 'framer-motion';
+import { 
+    motion, 
+    useTransform, 
+    useSpring, 
+    useMotionValue, 
+    useVelocity,
+    useAnimationFrame 
+} from 'framer-motion';
 import Link from 'next/link';
 import * as THREE from 'three';
 import { 
@@ -9,79 +16,81 @@ import {
     RiCpuLine, 
     RiShieldCheckLine, 
     RiAlertLine,
-    RiGlobeLine
+    RiFocus3Line
 } from 'react-icons/ri';
 
-// --- 1. THE RADAR GRID (Three.js) ---
-const RadarTerrain = ({ mouseX, mouseY }) => {
+// --- 1. THE COCKPIT ENGINE (Three.js + Dust + Grid) ---
+const CockpitScene = ({ mouseX, mouseY }) => {
     const mountRef = useRef(null);
 
     useEffect(() => {
         if (!mountRef.current) return;
 
+        // Scene Setup
         const scene = new THREE.Scene();
-        // 1. Black Fog for "Control/Authority" and depth
-        scene.fog = new THREE.FogExp2(0x000000, 0.0025); 
+        scene.fog = new THREE.FogExp2(0x000000, 0.003); // Deep Black Fog
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 25);
+        camera.position.set(0, 2, 20);
 
         const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         mountRef.current.appendChild(renderer.domElement);
 
-        // --- GRID: "Intelligence Yellow" ---
-        // Top grid (Ceiling) - faint
-        const gridTop = new THREE.GridHelper(200, 40, 0x333333, 0x111111);
-        gridTop.position.y = 10;
-        scene.add(gridTop);
-
-        // Bottom grid (Floor) - Active
-        const gridBottom = new THREE.GridHelper(200, 50, 0xFFD700, 0x1a1a1a); // Yellow Center line
+        // A. THE GRID (Speed Reference)
+        const gridBottom = new THREE.GridHelper(200, 50, 0xFFD700, 0x111111);
         gridBottom.position.y = -5;
         scene.add(gridBottom);
 
-        // --- FLOATING "INTEL" NODES ---
-        // These represent data points (Yellow = Intelligence, Green = Trust)
-        const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        const materialYellow = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
-        const materialGreen = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
+        // B. THE DUST (Velocity Particles)
+        const dustGeometry = new THREE.BufferGeometry();
+        const dustCount = 800;
+        const posArray = new Float32Array(dustCount * 3);
         
-        const cubes = [];
-        for (let i = 0; i < 50; i++) {
-            const isIntel = Math.random() > 0.5;
-            const mesh = new THREE.Mesh(geometry, isIntel ? materialYellow : materialGreen);
-            
-            mesh.position.x = (Math.random() - 0.5) * 100;
-            mesh.position.y = (Math.random() - 0.5) * 20;
-            mesh.position.z = (Math.random() - 0.5) * 100;
-            
-            scene.add(mesh);
-            cubes.push(mesh);
+        for(let i = 0; i < dustCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 150; // Wide spread
         }
+        
+        dustGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        
+        const dustMaterial = new THREE.PointsMaterial({
+            size: 0.15,
+            color: 0xFFD700, // Intelligence Yellow
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const dustParticles = new THREE.Points(dustGeometry, dustMaterial);
+        scene.add(dustParticles);
 
         // Animation Loop
+        let frameId;
         const animate = () => {
-            requestAnimationFrame(animate);
+            frameId = requestAnimationFrame(animate);
 
-            // Move Grids to simulate speed
-            gridTop.position.z += 0.1;
-            gridBottom.position.z += 0.2;
-            if (gridTop.position.z > 50) gridTop.position.z = 0;
-            if (gridBottom.position.z > 50) gridBottom.position.z = 0;
+            // 1. Grid Speed
+            gridBottom.position.z += 0.15;
+            if (gridBottom.position.z > 20) gridBottom.position.z = 0;
 
-            // Move Cubes
-            cubes.forEach((cube, i) => {
-                cube.position.z += 0.3;
-                if (cube.position.z > 30) cube.position.z = -100; // Reset far back
-            });
+            // 2. Dust Warp Speed
+            const positions = dustParticles.geometry.attributes.position.array;
+            for(let i = 2; i < dustCount * 3; i += 3) {
+                positions[i] += 0.4; // Move towards camera
+                if (positions[i] > 20) {
+                    positions[i] = -100; // Reset far back
+                }
+            }
+            dustParticles.geometry.attributes.position.needsUpdate = true;
 
-            // Smooth Camera Banking (Cockpit feel)
-            const rotX = mouseY.get() * 0.0001;
-            const rotY = mouseX.get() * 0.0001;
-            camera.rotation.x = -0.05 + rotX;
-            camera.rotation.y = rotY;
+            // 3. Smooth Camera Banking (Buttery Lerp)
+            // We use a small fraction (0.05) to ease the camera towards the mouse position
+            const targetRotX = -0.05 + (mouseY.get() * 0.0001);
+            const targetRotY = mouseX.get() * 0.0001;
+            
+            camera.rotation.x += (targetRotX - camera.rotation.x) * 0.05;
+            camera.rotation.y += (targetRotY - camera.rotation.y) * 0.05;
 
             renderer.render(scene, camera);
         };
@@ -95,120 +104,137 @@ const RadarTerrain = ({ mouseX, mouseY }) => {
         window.addEventListener('resize', handleResize);
 
         return () => {
+            cancelAnimationFrame(frameId);
             window.removeEventListener('resize', handleResize);
             if(mountRef.current) mountRef.current.innerHTML = '';
+            dustGeometry.dispose();
+            dustMaterial.dispose();
         };
     }, [mouseX, mouseY]);
 
     return <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-none mix-blend-screen" />;
 };
 
-// --- 2. MICRO-DETAILS (The HUD) ---
+// --- 2. ADVANCED HUD WIDGETS ---
 
-const ScanLine = () => (
-    <div className="absolute inset-0 pointer-events-none z-[20] opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%]" />
-);
-
-const CompassBar = ({ mouseX }) => {
-    // Sliding tape animation based on mouse X
-    const x = useTransform(mouseX, [-1000, 1000], [-100, 100]);
-    
+// A. Compass Tape (Top)
+const CompassTape = ({ smoothX }) => {
+    const x = useTransform(smoothX, [-1000, 1000], [-50, 50]);
     return (
-        <div className="absolute top-0 left-0 right-0 h-16 flex justify-center overflow-hidden z-[5]">
-            <div className="w-[600px] h-full relative mask-sides">
-                {/* Center Marker (Yellow = Intent) */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-[#FFD700] z-10 shadow-[0_0_10px_#FFD700]" />
+        <div className="absolute top-0 left-0 right-0 h-20 flex justify-center z-[10] overflow-hidden mask-gradient-x">
+            <div className="relative w-[600px] h-full border-b border-white/10">
+                {/* Center Reticle */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-[#FFD700] z-20 shadow-[0_0_10px_#FFD700]" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-px bg-[#FFD700]/50" />
                 
-                <motion.div style={{ x }} className="absolute top-2 left-0 right-0 flex justify-center gap-12 text-[10px] font-mono text-white/40">
-                    <span>280</span><span>290</span><span>300</span><span>310</span><span>320</span><span>330</span>
+                {/* Moving Numbers */}
+                <motion.div style={{ x }} className="absolute bottom-2 left-0 right-0 flex justify-center gap-16 text-[10px] font-mono text-white/30">
+                    <span>240</span><span>270</span><span>300</span><span>330</span>
                     <span className="text-white font-bold">N</span>
-                    <span>010</span><span>020</span><span>030</span><span>040</span><span>050</span><span>060</span>
+                    <span>030</span><span>060</span><span>090</span><span>120</span>
                 </motion.div>
-                
-                {/* Bottom Border with Ticks */}
-                <div className="absolute bottom-4 left-0 right-0 h-px bg-white/10" />
             </div>
         </div>
-    )
-}
+    );
+};
 
-const SideWidgets = () => {
-    // Simulated random data fluctuation
-    const time = useTime();
-    const cpuHeight = useTransform(time, [0, 2000], ["20%", "60%"]);
-    
+// B. G-Force Meter (Right) - Reacts to velocity
+const GForceMeter = ({ mouseX }) => {
+    const velocity = useVelocity(mouseX);
+    const [gForce, setGForce] = useState(0);
+
+    useAnimationFrame(() => {
+        // Calculate "G-Force" based on how fast mouse is moving
+        const currentVel = Math.abs(velocity.get());
+        // Dampen the value for smooth display
+        setGForce(prev => prev + (currentVel - prev) * 0.1);
+    });
+
+    // Map velocity to height percentage (0 to 100)
+    const height = Math.min((gForce / 2000) * 100, 100); 
+
     return (
-        <>
-            {/* LEFT: System Health (Green = Trust) */}
-            <div className="absolute left-6 top-1/2 -translate-y-1/2 w-12 hidden md:flex flex-col gap-6 z-[5]">
-                <div className="flex flex-col gap-1 items-start">
-                    <span className="text-[9px] text-green-500 uppercase tracking-widest font-mono">Sys_Ok</span>
-                    <div className="w-full h-32 border-l border-green-500/30 relative">
-                        {/* Animated Bar */}
-                        <motion.div 
-                            style={{ height: cpuHeight }} 
-                            className="absolute bottom-0 left-0 w-1 bg-green-500/50" 
-                        />
-                        {/* Ticks */}
-                        <div className="absolute left-0 top-0 w-2 h-px bg-green-500" />
-                        <div className="absolute left-0 bottom-0 w-2 h-px bg-green-500" />
-                    </div>
-                </div>
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 w-16 hidden md:flex flex-col items-end gap-2 z-[10]">
+            <div className="text-[9px] text-[#FFD700] font-mono tracking-widest uppercase text-right">
+                G-Force<br/><span className="text-white/50">Accelerometer</span>
             </div>
-
-            {/* RIGHT: Threat/Output Level (Red/Yellow) */}
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 w-12 hidden md:flex flex-col gap-6 items-end z-[5]">
-                <div className="flex flex-col gap-1 items-end">
-                    <span className="text-[9px] text-[#FFD700] uppercase tracking-widest font-mono">Output</span>
-                    <div className="w-full h-32 border-r border-[#FFD700]/30 relative">
-                        {/* Static High Level */}
-                        <div className="absolute bottom-0 right-0 w-1 h-[80%] bg-[#FFD700]/50" />
-                        {/* Danger Zone Marker (Red) */}
-                        <div className="absolute top-0 right-0 w-3 h-px bg-red-500 shadow-[0_0_5px_red]" />
-                    </div>
-                </div>
+            <div className="h-40 w-1 bg-white/10 relative overflow-hidden">
+                {/* The Active Bar */}
+                <motion.div 
+                    className="absolute bottom-0 w-full bg-gradient-to-t from-transparent via-[#FFD700] to-red-500"
+                    style={{ height: `${height}%` }}
+                />
+                {/* Ticks */}
+                {[...Array(10)].map((_, i) => (
+                    <div key={i} className="absolute w-2 h-px bg-black right-0" style={{ bottom: `${i * 10}%` }} />
+                ))}
             </div>
-        </>
-    )
-}
+            <div className="text-xs font-mono text-white/80">
+                {(height / 10).toFixed(1)} <span className="text-[#FFD700] text-[9px]">G</span>
+            </div>
+        </div>
+    );
+};
 
-// --- 3. THE "INTENT" SWITCH (CTA) ---
-const OverrideButton = () => {
+// --- 3. THE "ARM SYSTEM" CTA BUTTON ---
+const ArmSystemButton = () => {
     return (
-        <Link href="/dashboard" className="group relative inline-block mt-8">
-            {/* Button Container */}
-            <div className="relative z-10 flex items-center bg-black/80 border border-white/20 pl-6 pr-2 py-2 overflow-hidden hover:border-[#FFD700] transition-colors duration-300">
+        <Link href="/ai" className="group relative inline-block mt-12 cursor-none-override">
+            {/* 1. Outer Chassis (The Frame) */}
+            <div className="relative z-10 flex items-center bg-[#050505] border border-white/10 px-1 py-1 overflow-hidden transition-all duration-500 group-hover:border-[#FFD700]/60 group-hover:shadow-[0_0_30px_rgba(255,215,0,0.15)]">
                 
-                {/* Micro Details: Corner screws */}
-                <div className="absolute top-1 left-1 w-0.5 h-0.5 bg-white/50" />
-                <div className="absolute bottom-1 left-1 w-0.5 h-0.5 bg-white/50" />
+                {/* 2. The Inner "Button" Surface */}
+                <div className="relative px-8 py-4 bg-[#111] flex items-center gap-6 overflow-hidden">
+                    
+                    {/* Background Grid Pattern */}
+                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
+                    
+                    {/* Animated "Scan" Shine */}
+                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-[#FFD700]/10 to-transparent skew-x-12 z-0" />
 
-                {/* Left Status Light */}
-                <div className="mr-6 flex flex-col gap-0.5">
-                    <div className="w-8 h-1 bg-[#FFD700]/20 group-hover:bg-[#FFD700] transition-colors" />
-                    <div className="w-5 h-1 bg-[#FFD700]/20 group-hover:bg-[#FFD700] transition-colors delay-75" />
-                    <div className="w-3 h-1 bg-[#FFD700]/20 group-hover:bg-[#FFD700] transition-colors delay-100" />
+                    {/* Left Icon (Targeting) */}
+                    <div className="relative z-10 flex flex-col items-center justify-center w-8 h-8 rounded border border-white/10 text-white/40 group-hover:text-[#FFD700] group-hover:border-[#FFD700] transition-colors duration-300">
+                        <RiFocus3Line className="animate-[spin_4s_linear_infinite]" />
+                    </div>
+
+                    {/* Text Block */}
+                    <div className="relative z-10 flex flex-col">
+                        <div className="h-5 overflow-hidden relative">
+                            {/* Text Swap Animation */}
+                            <div className="flex flex-col transition-transform duration-300 group-hover:-translate-y-5">
+                                <span className="text-sm font-bold text-white tracking-[0.2em] uppercase h-5 flex items-center">
+                                    AI Center
+                                </span>
+                                <span className="text-sm font-bold text-[#FFD700] tracking-[0.2em] uppercase h-5 flex items-center">
+                                    Onboarding...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Arrow (The Trigger) */}
+                    <div className="relative z-10 w-px h-8 bg-white/10 group-hover:bg-[#FFD700]/50 transition-colors" />
+                    <RiArrowRightLine className="relative z-10 text-white group-hover:translate-x-1 transition-transform duration-300 group-hover:text-[#FFD700]" />
                 </div>
 
-                {/* Text */}
-                <div className="flex flex-col mr-8">
-                    <span className="text-[8px] uppercase tracking-widest text-gray-500 font-mono group-hover:text-[#FFD700]">Manual Override</span>
-                    <span className="text-sm font-bold text-white tracking-[0.2em] uppercase">Initialize</span>
-                </div>
-
-                {/* The "Switch" Block */}
-                <div className="h-10 w-12 bg-[#FFD700] flex items-center justify-center text-black font-bold group-hover:scale-105 transition-transform">
-                    <RiArrowRightLine size={18} />
-                </div>
+                {/* 3. Corner Brackets (Tech Detail) */}
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30 group-hover:border-[#FFD700]" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30 group-hover:border-[#FFD700]" />
             </div>
         </Link>
-    )
-}
+    );
+};
 
-// --- 4. MAIN COMPONENT ---
-export default function CommanderHero() {
+// --- 4. MAIN HERO ---
+export default function CockpitHero() {
+    // 1. Raw Mouse Motion
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
+
+    // 2. "Buttery" Smooth Physics (Springs)
+    // High damping = heavy fluid feel. Stiffness = responsiveness.
+    const smoothX = useSpring(mouseX, { damping: 50, stiffness: 400 });
+    const smoothY = useSpring(mouseY, { damping: 50, stiffness: 400 });
 
     const handleMouseMove = (e) => {
         const { clientX, clientY } = e;
@@ -221,84 +247,110 @@ export default function CommanderHero() {
             className="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center"
             onMouseMove={handleMouseMove}
         >
-            {/* 1. BACKGROUND LAYERS */}
-            {/* Three.js Radar */}
-            <RadarTerrain mouseX={mouseX} mouseY={mouseY} />
+            {/* A. 3D BACKGROUND */}
+            <CockpitScene mouseX={smoothX} mouseY={smoothY} />
             
-            {/* Cinematic Noise (Fine grain) */}
-            <div className="absolute inset-0 pointer-events-none z-[2] opacity-[0.07]" 
-                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` }} 
+            {/* B. TEXTURE OVERLAYS */}
+            {/* Noise */}
+            <div className="absolute inset-0 pointer-events-none z-[2] opacity-[0.06] mix-blend-overlay" 
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` }} 
             />
-            {/* Vignette (Focus attention to center) */}
-            <div className="absolute inset-0 pointer-events-none z-[3] bg-[radial-gradient(circle_at_center,transparent_10%,#000000_100%)]" />
+            {/* Vignette */}
+            <div className="absolute inset-0 pointer-events-none z-[3] bg-[radial-gradient(circle_at_center,transparent_0%,#000000_110%)]" />
             
-            {/* Scanlines */}
-            <ScanLine />
-
-            {/* 2. HUD INTERFACE */}
+            {/* C. HUD INTERFACE */}
             <div className="absolute inset-0 pointer-events-none z-[10] select-none">
-                <CompassBar mouseX={mouseX} />
-                <SideWidgets />
-                {/* Center Reticle (Subtle) */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-10 border border-white/20 rounded-full border-dashed animate-[spin_120s_linear_infinite]" />
+                <CompassTape smoothX={smoothX} />
+                <GForceMeter mouseX={smoothX} />
+                
+                {/* Left Status (Green = Trust) */}
+                <div className="absolute left-8 top-1/2 -translate-y-1/2 hidden md:block">
+                    <div className="flex items-center gap-3 mb-2">
+                        <RiShieldCheckLine className="text-green-500" />
+                        <span className="text-[9px] font-mono text-green-500 tracking-widest uppercase">Systems Normal</span>
+                    </div>
+                    <div className="w-1 h-24 bg-green-900/30 relative">
+                        <div className="absolute bottom-0 w-full h-[75%] bg-green-500/50 shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
+                        {/* Static Grid Lines */}
+                        <div className="absolute top-[25%] w-3 h-px bg-green-500" />
+                        <div className="absolute top-[50%] w-3 h-px bg-green-500" />
+                        <div className="absolute top-[75%] w-3 h-px bg-green-500" />
+                    </div>
+                </div>
+
+                {/* Bottom Threat Monitor (Red = Danger) */}
+                <div className="absolute bottom-6 w-full flex justify-center">
+                    <div className="flex items-center gap-4 px-4 py-2 bg-red-950/10 border border-red-500/10 rounded-full backdrop-blur-sm">
+                        <RiAlertLine className="text-red-500/50" size={14} />
+                        <span className="text-[9px] font-mono text-red-500/50 tracking-widest uppercase">
+                            Global Threat Level: <span className="text-white/80">Zero</span>
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            {/* 3. MAIN CONTENT */}
+            {/* D. HERO CONTENT */}
             <div className="relative z-20 container mx-auto px-4 flex flex-col items-center text-center">
                 
-                {/* Status Badge */}
+                {/* Animated Status Pill */}
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-6 flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full"
+                    transition={{ duration: 0.6 }}
+                    className="mb-8 hidden flex items-center gap-3 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full backdrop-blur-md"
                 >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] animate-pulse shadow-[0_0_8px_#FFD700]" />
-                    <span className="text-[9px] uppercase tracking-[0.2em] text-white/70">Awaiting Command</span>
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFD700] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFD700]"></span>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-white/60 font-medium">
+                        Pilot Access Granted
+                    </span>
                 </motion.div>
 
-                {/* Title */}
+                {/* Main Title */}
                 <div className="relative">
-                    {/* Decorative Brackets */}
-                    <span className="absolute -left-8 -top-4 text-4xl text-white/10 font-thin hidden md:block">{'['}</span>
-                    <span className="absolute -right-8 -top-4 text-4xl text-white/10 font-thin hidden md:block">{']'}</span>
+                    {/* Ghost Brackets */}
+                    <span className="absolute -left-12 top-0 text-6xl text-white/5 font-thin hidden lg:block opacity-50">{'['}</span>
+                    <span className="absolute -right-12 top-0 text-6xl text-white/5 font-thin hidden lg:block opacity-50">{']'}</span>
 
                     <motion.h1 
-                        initial={{ opacity: 0, filter: "blur(10px)" }}
+                        initial={{ opacity: 0, filter: "blur(12px)" }}
                         animate={{ opacity: 1, filter: "blur(0px)" }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1] max-w-4xl"
+                        transition={{ duration: 1, delay: 0.2 }}
+                        className="text-4xl md:text-6xl lg:text-7xl font-semibold text-white tracking-tight leading-[1.1]"
                     >
-                        The Autonomous <br />
-                        <span className="text-[#FFD700]/90">
-                            Intelligence Engine
+                        AI Agents That <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] via-yellow-100 to-[#FFD700] drop-shadow-[0_0_25px_rgba(255,215,0,0.3)]">
+                            Act on the Economy
                         </span>
                     </motion.h1>
                 </div>
 
-                {/* Description */}
+                {/* Subtext */}
                 <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.4 }}
-                    className="mt-6 max-w-xl text-lg text-gray-400 font-light leading-relaxed"
+                    className="mt-8 max-w-lg text-sm sm:text-lg text-gray-400 font-light leading-relaxed"
                 >
-                    Deploy agents that understand <span className="text-white font-medium">risk</span> and <span className="text-white font-medium">reward</span>.
-                    <br className="hidden md:block"/> Full control over your decentralized economy.
+                    Observe how autonomous <span className="text-gray-300 font-normal">AI agents interpret real on-chain activity</span>,form economic intent, and <span className="text-gray-300 font-normal">signal opportunities and risks</span>using live blockchain data, not assumptions.
                 </motion.p>
 
-                {/* CTA */}
+                {/* THE NEW CTA */}
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
                 >
-                    <OverrideButton />
+                    <ArmSystemButton />
                 </motion.div>
+
             </div>
 
+            {/* Global Styles for masking */}
             <style jsx global>{`
-                .mask-sides {
+                .mask-gradient-x {
                     mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
                     -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
                 }
