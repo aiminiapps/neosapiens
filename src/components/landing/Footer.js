@@ -81,67 +81,35 @@ export default function LuxuryFooter() {
                     {/* Top Gold Accent Line */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-50" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-20">
+                    <div className="grid grid-cols-1 md:grid-cols-13 gap-12 lg:gap-20">
                         
                         {/* LEFT: Identity */}
                         <div className="md:col-span-7 flex flex-col gap-8">
-                            {/* Logo Block */}
                             <div className="flex items-center gap-4">
-                                <div className="relative w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-b from-[#1a1a1a] to-black border border-white/10 shadow-lg">
-                                    {/* Logo Image */}
                                     <Image 
                                         src="/logo.png" 
                                         alt="NEO Sapiens" 
-                                        width={24} 
-                                        height={24}
+                                        width={240} 
+                                        height={70}
                                         className="object-contain"
                                     />
-                                    {/* Inner Glow */}
-                                    <div className="absolute inset-0 rounded-xl bg-[#FFD700] opacity-5 mix-blend-overlay" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xl font-bold text-white tracking-wide">NEO-SAPIENS</span>
-                                    <span className="text-[10px] text-gray-500 uppercase tracking-[0.2em]">Intelligence Protocol</span>
-                                </div>
-                            </div>
-                            
-                            <p className="text-gray-400 font-light leading-relaxed max-w-md">
-                                The autonomous intelligence layer for the decentralized economy. 
-                                We build agents that see, think, and act on-chain with absolute transparency.
-                            </p>
-
-                            {/* Social Row */}
-                            <div className="flex flex-wrap gap-3">
-                                <SocialButton icon={RiTwitterXLine} href="https://twitter.com" label="X" />
-                                <SocialButton icon={RiTelegramLine} href="https://telegram.org" label="Telegram" />
-                                <SocialButton icon={RiGlobalLine} href="https://bscscan.com" label="BscScan" />
                             </div>
                         </div>
-
+                        {/* Social Row */}
+                        <div className="flex gap-4">
+                            <SocialButton icon={RiTwitterXLine} href="https://x.com/Neosapiens_ai" label="X" />
+                            <SocialButton icon={RiTelegramLine} href="https://telegram.org" label="Telegram" />
+                            <SocialButton icon={RiGlobalLine} href="https://bscscan.com" label="BscScan" />
+                        </div>
                         {/* RIGHT: Actions */}
                         <div className="md:col-span-5 flex flex-col justify-between items-start md:items-end gap-10">
-                            
-                            <div className="text-left md:text-right">
-                                <WhitepaperCard />
-                            </div>
-
-                            {/* Status Indicator */}
-                            <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-full border border-white/5">
-                                <div className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                </div>
-                                <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest">
-                                    Mainnet: Active
-                                </span>
-                            </div>
-
+                            <WhitepaperCard />
                         </div>
                     </div>
 
                     {/* C. COPYRIGHT BAR */}
                     <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-gray-600 font-mono uppercase tracking-wider">
-                        <span>© {currentYear} NEO-SAPIENS FOUNDATION</span>
+                        <span>© {currentYear} NEO-SAPIENS</span>
                         <span className="opacity-50">All Rights Reserved</span>
                     </div>
 
