@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { 
     RiTwitterXLine, 
-    RiTelegramLine, 
-    RiGlobalLine, 
     RiFileTextLine,
-    RiArrowRightUpLine
+    RiArrowRightUpLine,
+    RiTelegram2Line,
+    RiBnbFill
 } from 'react-icons/ri';
 
 // --- 1. LUXURY SOCIAL BUTTON (Fixed Visibility) ---
@@ -111,8 +111,8 @@ export default function LuxuryFooter() {
                         <div className="md:col-span-3 flex justify-start md:justify-center">
                             <div className="flex gap-4">
                                 <SocialButton icon={RiTwitterXLine} href="https://x.com/Neosapiens_ai" label="X" />
-                                <SocialButton icon={RiTelegramLine} href="https://telegram.org" label="Telegram" />
-                                <SocialButton icon={RiGlobalLine} href="https://bscscan.com" label="BscScan" />
+                                <SocialButton icon={RiTelegram2Line} href="https://telegram.org" label="Telegram" />
+                                <SocialButton icon={RiBnbFill} href="https://bscscan.com" label="BscScan" />
                             </div>
                         </div>
 
