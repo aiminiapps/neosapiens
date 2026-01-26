@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { 
     RiArrowRightLine, 
     RiDashboard3Line, 
@@ -12,7 +13,8 @@ import {
 // --- 1. THE "REACTOR" BUTTON ---
 const LaunchButton = () => {
     return (
-        <motion.button
+        <Link href='/ai'>
+                <motion.button
             whileHover="hover"
             initial="initial"
             className="group relative px-10 py-5 bg-transparent overflow-hidden rounded-sm w-fit mx-auto cursor-pointer"
@@ -70,6 +72,7 @@ const LaunchButton = () => {
             <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/30 group-hover:border-black/30 z-20 transition-colors" />
             <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/30 group-hover:border-black/30 z-20 transition-colors" />
         </motion.button>
+        </Link>
     );
 };
 
