@@ -33,15 +33,15 @@ const SocialButton = ({ icon: Icon, href, label }) => (
 // --- 2. "DATA CARTRIDGE" WHITEPAPER LINK ---
 const WhitepaperCard = () => (
     <Link href="https://neo-sapiens.gitbook.io/neo-sapiens-docs/" target='_blank' className="group relative block w-full md:w-auto">
-        <div className="relative flex items-center gap-4 p-2 pr-6 bg-[#0F0F0F] border border-white/10 rounded-xl overflow-hidden transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:bg-[#FFD700]/5">
+        <div className="relative flex items-center gap-4 p-1.5 pr-6 bg-[#0F0F0F] border border-white/10 rounded-xl overflow-hidden transition-all duration-300 group-hover:border-[#FFD700]/50 group-hover:bg-[#FFD700]/5">
             
             {/* Animated Icon Box */}
-            <div className="relative w-12 h-12 flex items-center justify-center bg-black border border-white/10 rounded-lg group-hover:border-[#FFD700] transition-colors">
+            <div className="relative w-10 h-10 flex items-center justify-center bg-black border border-white/10 rounded-lg group-hover:border-[#FFD700] transition-colors">
                 <RiFileTextLine size={22} className="text-gray-400 group-hover:text-[#FFD700]" />
             </div>
 
             <div className="flex flex-col">
-                <span className="text-white font-medium flex items-center gap-2">
+                <span className="text-white text-sm font-medium flex items-center gap-2">
                     Read Whitepaper
                     <RiArrowRightUpLine className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[#FFD700]" size={14} />
                 </span>
