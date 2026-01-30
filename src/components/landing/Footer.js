@@ -111,8 +111,6 @@ export default function LuxuryFooter() {
                         <div className="md:col-span-3 mx-auto flex justify-start md:justify-center">
                             <div className="flex gap-4">
                                 <SocialButton icon={RiTwitterXLine} href="https://x.com/Neosapiens_ai" label="X" />
-                                <SocialButton icon={RiTelegram2Line} href="https://telegram.org" label="Telegram" />
-                                <SocialButton icon={RiBnbFill} href="https://bscscan.com" label="BscScan" />
                             </div>
                         </div>
 
